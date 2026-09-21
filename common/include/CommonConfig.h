@@ -5,7 +5,7 @@
 #include "NintendontVersion.h"
 #include "Metadata.h"
 
-#define NIN_CFG_VERSION		0x0000000A
+#define NIN_CFG_VERSION		0x0000000B
 
 #define NIN_CFG_MAXPAD 4
 
@@ -52,6 +52,8 @@ enum ninconfigbitpos
 	NIN_CFG_BIT_CC_RUMBLE	= (17),
 	NIN_CFG_BIT_SKIP_IPL	= (18),
 	NIN_CFG_BIT_BBA_EMU		= (19),
+	NIN_CFG_BIT_MC_SLOTB_EMU	= (20),	// Emulate a second memory card in Slot B
+	NIN_CFG_BIT_SHOW_ADVANCED	= (21),	// Loader UI only: show advanced settings
 
 	// Internal kernel settings.
 	NIN_CFG_BIT_MC_SLOTB	= (31),	// Slot B image is loaded
@@ -81,6 +83,8 @@ enum ninconfig
 	NIN_CFG_CC_RUMBLE	= (1<<NIN_CFG_BIT_CC_RUMBLE),
 	NIN_CFG_SKIP_IPL	= (1<<NIN_CFG_BIT_SKIP_IPL),
 	NIN_CFG_BBA_EMU		= (1<<NIN_CFG_BIT_BBA_EMU),
+	NIN_CFG_MC_SLOTB_EMU	= (1<<NIN_CFG_BIT_MC_SLOTB_EMU),
+	NIN_CFG_SHOW_ADVANCED	= (1<<NIN_CFG_BIT_SHOW_ADVANCED),	// Loader UI only
 
 	NIN_CFG_MC_SLOTB	= (1<<NIN_CFG_BIT_MC_SLOTB),
 };
@@ -103,7 +107,7 @@ enum ninvideomodeindex
 	NIN_VID_INDEX_AUTO			= (0),
 	NIN_VID_INDEX_FORCE			= (1),
 	NIN_VID_INDEX_NONE			= (2),
-	NIN_VID_INDEX_FORCE_DF		= (4),
+	NIN_VID_INDEX_FORCE_DF		= (4),	// Deprecated (config v10 and older); see NIN_VID_DF_*
 //low bits
 	NIN_VID_INDEX_FORCE_PAL50	= (0),
 	NIN_VID_INDEX_FORCE_PAL60	= (1),
@@ -112,6 +116,8 @@ enum ninvideomodeindex
 
 	NIN_VID_INDEX_PROG			= (4),
 	NIN_VID_INDEX_PATCH_PAL50	= (5),
+	NIN_VID_INDEX_DF_FORCE		= (6),	// Deflicker: override the game's setting
+	NIN_VID_INDEX_DF_ON			= (7),	// Deflicker: forced state (1 = on, 0 = off)
 };
 
 enum ninvideomode
@@ -132,6 +138,13 @@ enum ninvideomode
 
 	NIN_VID_PROG		= (1<<NIN_VID_INDEX_PROG),	//important to prevent blackscreens
 	NIN_VID_PATCH_PAL50	= (1<<NIN_VID_INDEX_PATCH_PAL50), //different force behaviour
+
+	// Deflicker override. Independent of NIN_VID_FORCE since config v11.
+	// DF_FORCE clear: leave the game's deflicker filter alone.
+	// DF_FORCE set:   patch the filter to DF_ON's state.
+	NIN_VID_DF_FORCE	= (1<<NIN_VID_INDEX_DF_FORCE),
+	NIN_VID_DF_ON		= (1<<NIN_VID_INDEX_DF_ON),
+	NIN_VID_DF_MASK		= NIN_VID_DF_FORCE|NIN_VID_DF_ON,
 };
 
 enum ninlanguage

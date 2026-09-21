@@ -471,7 +471,54 @@ void UpdateNinCFG()
 		{
 			ncfg->WiiUGamepadSlot = 0;
 		}
+
+		// v11: Deflicker became its own setting.
+		// Old "Force (Deflicker)" forced the filter on, and plain
+		// "Force" forced it off; preserve both behaviours.
+		const u32 vid = ncfg->VideoMode & NIN_VID_MASK;
+		ncfg->VideoMode &= ~(NIN_VID_MASK | NIN_VID_DF_MASK);
+		if (vid == (NIN_VID_FORCE | NIN_VID_FORCE_DF))
+		{
+			ncfg->VideoMode |= NIN_VID_FORCE | NIN_VID_DF_FORCE | NIN_VID_DF_ON;
+		}
+		else if (vid == NIN_VID_FORCE)
+		{
+			ncfg->VideoMode |= NIN_VID_FORCE | NIN_VID_DF_FORCE;
+		}
+		else
+		{
+			ncfg->VideoMode |= vid;
+		}
+
+		// v11: New flags, disabled by default.
+		ncfg->Config &= ~(NIN_CFG_MC_SLOTB_EMU | NIN_CFG_SHOW_ADVANCED);
+		ncfg->Version = 11;
 	}
+}
+
+/**
+ * Reset the configuration to factory defaults.
+ * The selected game, storage device (SD/USB) and the runtime
+ * progressive-scan flag are preserved.
+ */
+void SetDefaultNinCFG(void)
+{
+	const u32 keepConfig = ncfg->Config & NIN_CFG_USB;
+	const u32 keepVideo = ncfg->VideoMode & NIN_VID_PROG;
+	char GamePath[sizeof(ncfg->GamePath)];
+	const u32 GameID = ncfg->GameID;
+	memcpy(GamePath, ncfg->GamePath, sizeof(GamePath));
+
+	memset(ncfg, 0, sizeof(NIN_CFG));
+	ncfg->Magicbytes = 0x01070CF6;
+	ncfg->Version = NIN_CFG_VERSION;
+	ncfg->Config = keepConfig;
+	ncfg->VideoMode = NIN_VID_AUTO | keepVideo;
+	ncfg->Language = NIN_LAN_AUTO;
+	ncfg->MaxPads = NIN_CFG_MAXPAD;
+	ncfg->MemCardBlocks = 0x2;	// 251 blocks
+	ncfg->GameID = GameID;
+	memcpy(ncfg->GamePath, GamePath, sizeof(GamePath));
 }
 
 int CreateNewFile(const char *Path, unsigned int size)
