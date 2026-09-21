@@ -2,7 +2,7 @@
 #ifndef __COMMON_CONFIG_STRINGS_H__
 #define __COMMON_CONFIG_STRINGS_H__
 
-// NOTE: the loader's Settings menu is table driven
+// NOTE: Since config v11 the loader's Settings menu is table driven
 // (loader/source/SettingsMenu.c) and no longer uses these arrays.
 // They are kept for third-party tools; order must match CommonConfig.h.
 const char* OptionStrings[] =
@@ -48,7 +48,7 @@ const char* VideoStrings[] =
 	"Force",
 	"None",
 	"Invalid",
-	"Force (Deflicker)",
+	"Force (Deflicker)", // Deprecated: deflicker is a separate setting since v11
 };
 
 const char* VideoModeStrings[] =

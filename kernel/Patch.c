@@ -1688,6 +1688,7 @@ void DoPatches( char *Buffer, u32 Length, u32 DiscOffset )
 #endif
 	u32 videoPatches = 0;
 	if( ConfigGetConfig(NIN_CFG_FORCE_PROG) || (ConfigGetVideoMode() & NIN_VID_FORCE) ||
+		(ConfigGetVideoMode() & NIN_VID_DF_FORCE) ||
 		(ConfigGetVideoOffset() != 0 && ConfigGetVideoOffset() >= -20 && ConfigGetVideoOffset() <= 20) ||
 		(ConfigGetVideoScale() != 0 && ConfigGetVideoScale() >= 40 && ConfigGetVideoScale() <= 120) )
 	{
@@ -2163,9 +2164,10 @@ void DoPatches( char *Buffer, u32 Length, u32 DiscOffset )
 					&& (read32((u32)Buffer+i+12) & 0xFF00FF00) == 0x00000200 && read32((u32)Buffer+i+24) == 0x00000606
 					&& read32((u32)Buffer+i+32) == 0x06060606 && read32((u32)Buffer+i+44) == 0x06060606)
 				{
-					if(ConfigGetVideoMode() & NIN_VID_FORCE)
+					// Deflicker override (independent of video mode forcing).
+					if(ConfigGetVideoMode() & NIN_VID_DF_FORCE)
 					{
-						if(ConfigGetVideoMode() & NIN_VID_FORCE_DF)
+						if(ConfigGetVideoMode() & NIN_VID_DF_ON)
 						{
 							if(memcmp(Buffer+i+0x32, GXDeflickerOff, sizeof(GXDeflickerOff)) == 0)
 								memcpy(Buffer+i+0x32, GXDeflickerOn, sizeof(GXDeflickerOn));

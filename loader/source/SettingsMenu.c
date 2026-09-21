@@ -83,6 +83,7 @@ typedef enum
 	KIND_BOOL = 0,	// Two states. Labels default to Off/On.
 	KIND_ENUM,	// N labelled states.
 	KIND_INT,	// Integer range [min, max]; formatted by a callback.
+	KIND_ACTION,	// Pressing A runs a callback.
 } SettingKind;
 
 typedef enum
@@ -95,8 +96,9 @@ typedef enum
 enum SettingFlags
 {
 	SF_NONE		= 0,
-	SF_WII_ONLY	= (1 << 0),	// Hidden on Wii U / Wii VC.
-	SF_WIIU_ONLY	= (1 << 1),	// Hidden on original Wii.
+	SF_ADVANCED	= (1 << 0),	// Only shown when "Show Advanced" is on.
+	SF_WII_ONLY	= (1 << 1),	// Hidden on Wii U / Wii VC.
+	SF_WIIU_ONLY	= (1 << 2),	// Hidden on original Wii.
 };
 
 typedef struct SettingDef
@@ -126,6 +128,9 @@ typedef struct SettingDef
 	// KIND_INT: range and formatter.
 	s32 min, max;
 	void (*format)(s32 value, char *buf, size_t len);
+
+	// KIND_ACTION: callback.
+	void (*action)(void);
 
 	// Called after the value changes. (optional)
 	void (*onChange)(void);
@@ -176,24 +181,22 @@ static void Set_Language(s32 idx)
 	ncfg->Language = (idx >= NIN_LAN_LAST) ? (u32)NIN_LAN_AUTO : (u32)idx;
 }
 
-static const char *const VideoModeLabels[] = { "Auto", "Force", "Force (Deflicker)", "None" };
-static const u32 VideoModeValues[] = {
-	NIN_VID_AUTO, NIN_VID_FORCE, NIN_VID_FORCE | NIN_VID_FORCE_DF, NIN_VID_NONE
-};
+static const char *const VideoModeLabels[] = { "Auto", "Force", "None" };
 static s32 Get_VideoMode(void)
 {
-	u32 i;
-	for (i = 0; i < 4; i++)
+	switch (ncfg->VideoMode & NIN_VID_MASK)
 	{
-		if ((ncfg->VideoMode & NIN_VID_MASK) == VideoModeValues[i])
-			return (s32)i;
+		case NIN_VID_FORCE:	return 1;
+		case NIN_VID_NONE:	return 2;
+		case NIN_VID_AUTO:
+		default:		return 0;
 	}
-	return 0;	// Auto
 }
 static void Set_VideoMode(s32 idx)
 {
+	static const u32 modes[] = { NIN_VID_AUTO, NIN_VID_FORCE, NIN_VID_NONE };
 	ncfg->VideoMode &= ~NIN_VID_MASK;
-	ncfg->VideoMode |= VideoModeValues[idx];
+	ncfg->VideoMode |= modes[idx];
 }
 
 static const char *const ForcedModeLabels[] = { "PAL50", "PAL60", "NTSC", "MPAL" };
@@ -212,6 +215,22 @@ static void Set_ForcedMode(s32 idx)
 {
 	ncfg->VideoMode &= ~NIN_VID_FORCE_MASK;
 	ncfg->VideoMode |= (NIN_VID_FORCE_PAL50 << idx);
+}
+
+static const char *const DeflickerLabels[] = { "Game Default", "Force Off", "Force On" };
+static s32 Get_Deflicker(void)
+{
+	if (!(ncfg->VideoMode & NIN_VID_DF_FORCE))
+		return 0;
+	return (ncfg->VideoMode & NIN_VID_DF_ON) ? 2 : 1;
+}
+static void Set_Deflicker(s32 idx)
+{
+	ncfg->VideoMode &= ~NIN_VID_DF_MASK;
+	if (idx == 1)
+		ncfg->VideoMode |= NIN_VID_DF_FORCE;
+	else if (idx == 2)
+		ncfg->VideoMode |= (NIN_VID_DF_FORCE | NIN_VID_DF_ON);
 }
 
 // Video width: index 0 == Auto; index k (1..41) == scale 38+2k (40..120).
@@ -312,9 +331,16 @@ static void Fmt_NetProfile(s32 v, char *buf, size_t len)
 		snprintf(buf, len, "%d", v);
 }
 
+static void Action_ResetSettings(void)
+{
+	SetDefaultNinCFG();
+	ReconfigVideo(rmode);
+}
+
 /** Labels. **/
 static const char *const OnOffLabels[]		= { "Off", "On" };
 static const char *const NoYesLabels[]		= { "No", "Yes" };
+static const char *const ReadSpeedLabels[]	= { "Authentic", "Unlocked" };
 
 /** Descriptions. Keep lines <= 29 characters. **/
 
@@ -344,13 +370,13 @@ static const char *const desc_cheats[] = {
 	NULL
 };
 static const char *const desc_readspeed[] = {
-	"Disc read speed is normally",
-	"limited to the speed of the",
-	"original GameCube drive.",
+	"Authentic emulates the speed",
+	"of the original GameCube",
+	"disc drive.",
 	"",
-	"Unlocking it allows faster",
-	"load times, but can cause",
-	"problems in games that are",
+	"Unlocked allows faster load",
+	"times, but can cause problems",
+	"in games that are extremely",
 	"sensitive to disc timing.",
 	NULL
 };
@@ -369,6 +395,14 @@ static const char *const desc_led[] = {
 	"to the storage device.",
 	NULL
 };
+static const char *const desc_show_advanced[] = {
+	"Show the Advanced tab and",
+	"other rarely used options.",
+	"",
+	"Advanced options can break",
+	"games when set incorrectly.",
+	NULL
+};
 
 static const char *const desc_video_mode[] = {
 	"Auto: pick the video mode",
@@ -384,6 +418,16 @@ static const char *const desc_video_mode[] = {
 static const char *const desc_forced_mode[] = {
 	"Video mode to force when",
 	"Video Mode is set to Force.",
+	NULL
+};
+static const char *const desc_deflicker[] = {
+	"Override the game's vertical",
+	"deflicker filter.",
+	"",
+	"Forcing it off gives a",
+	"sharper picture on modern",
+	"displays. Forcing it on can",
+	"reduce flicker on CRTs.",
 	NULL
 };
 static const char *const desc_force_prog[] = {
@@ -503,6 +547,17 @@ static const char *const desc_mc_multi[] = {
 	"all JPN games.",
 	NULL
 };
+static const char *const desc_mc_slotb[] = {
+	"Also emulate a memory card",
+	"in Slot B, stored as a",
+	"separate .raw file.",
+	"",
+	"Experimental: some games",
+	"report the Slot B card as",
+	"damaged. Not used with",
+	"Triforce games.",
+	NULL
+};
 
 static const char *const desc_bba[] = {
 	"Enable BBA Emulation in the",
@@ -571,6 +626,14 @@ static const char *const desc_tri_arcade[] = {
 	"C stick in any direction.",
 	NULL
 };
+static const char *const desc_reset[] = {
+	"Reset every option to its",
+	"default value.",
+	"",
+	"The selected game and",
+	"storage device are kept.",
+	NULL
+};
 
 /**
  * The settings table.
@@ -585,12 +648,14 @@ static const SettingDef Settings[] =
 	  .get = Get_Language, .set = Set_Language, .labels = LanguageLabels, .count = 7, .desc = desc_language },
 	{ .name = "Cheats", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
 	  .mask = NIN_CFG_CHEATS, .desc = desc_cheats },
-	{ .name = "Unlock Read Speed", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
-	  .mask = NIN_CFG_REMLIMIT, .desc = desc_readspeed },
+	{ .name = "Read Speed", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
+	  .mask = NIN_CFG_REMLIMIT, .labels = ReadSpeedLabels, .count = 2, .desc = desc_readspeed },
 	{ .name = "Skip IPL", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
 	  .mask = NIN_CFG_SKIP_IPL, .labels = NoYesLabels, .count = 2, .desc = desc_skip_ipl },
 	{ .name = "Drive Access LED", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
 	  .flags = SF_WII_ONLY, .mask = NIN_CFG_LED, .desc = desc_led },
+	{ .name = "Show Advanced", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
+	  .mask = NIN_CFG_SHOW_ADVANCED, .desc = desc_show_advanced },
 
 	/** Video **/
 	{ .name = "Video Mode", .category = CAT_VIDEO, .kind = KIND_ENUM, .store = STORE_CUSTOM,
@@ -598,6 +663,8 @@ static const SettingDef Settings[] =
 	{ .name = "Forced Mode", .category = CAT_VIDEO, .kind = KIND_ENUM, .store = STORE_CUSTOM,
 	  .visible = Vis_VideoForce, .get = Get_ForcedMode, .set = Set_ForcedMode,
 	  .labels = ForcedModeLabels, .count = 4, .desc = desc_forced_mode },
+	{ .name = "Deflicker", .category = CAT_VIDEO, .kind = KIND_ENUM, .store = STORE_CUSTOM,
+	  .get = Get_Deflicker, .set = Set_Deflicker, .labels = DeflickerLabels, .count = 3, .desc = desc_deflicker },
 	{ .name = "Force Progressive", .category = CAT_VIDEO, .kind = KIND_BOOL, .store = STORE_CONFIG,
 	  .mask = NIN_CFG_FORCE_PROG, .desc = desc_force_prog },
 	{ .name = "Patch PAL50", .category = CAT_VIDEO, .kind = KIND_BOOL, .store = STORE_VIDEO,
@@ -633,6 +700,8 @@ static const SettingDef Settings[] =
 	  .format = Fmt_CardSize, .desc = desc_card_size },
 	{ .name = "Multi Card", .category = CAT_MEMCARD, .kind = KIND_BOOL, .store = STORE_CONFIG,
 	  .visible = Vis_MemCardEmu, .mask = NIN_CFG_MC_MULTI, .desc = desc_mc_multi },
+	{ .name = "Slot B Emulation", .category = CAT_MEMCARD, .kind = KIND_BOOL, .store = STORE_CONFIG,
+	  .visible = Vis_MemCardEmu, .mask = NIN_CFG_MC_SLOTB_EMU, .desc = desc_mc_slotb },
 
 	/** Network **/
 	{ .name = "BBA Emulation", .category = CAT_NETWORK, .kind = KIND_BOOL, .store = STORE_CONFIG,
@@ -641,19 +710,21 @@ static const SettingDef Settings[] =
 	  .visible = Vis_BBAProfile, .get = Get_NetProfile, .set = Set_NetProfile, .min = 0, .max = 3,
 	  .format = Fmt_NetProfile, .desc = desc_netprof },
 
-	/** Advanced **/
+	/** Advanced (all entries must carry SF_ADVANCED) **/
 	{ .name = "Debugger", .category = CAT_ADVANCED, .kind = KIND_BOOL, .store = STORE_CONFIG,
-	  .flags = SF_WII_ONLY, .mask = NIN_CFG_DEBUGGER, .desc = desc_debugger },
+	  .flags = SF_ADVANCED | SF_WII_ONLY, .mask = NIN_CFG_DEBUGGER, .desc = desc_debugger },
 	{ .name = "Debugger Wait", .category = CAT_ADVANCED, .kind = KIND_BOOL, .store = STORE_CONFIG,
-	  .flags = SF_WII_ONLY, .mask = NIN_CFG_DEBUGWAIT, .desc = desc_debugwait },
+	  .flags = SF_ADVANCED | SF_WII_ONLY, .mask = NIN_CFG_DEBUGWAIT, .desc = desc_debugwait },
 	{ .name = "OSReport", .category = CAT_ADVANCED, .kind = KIND_BOOL, .store = STORE_CONFIG,
-	  .mask = NIN_CFG_OSREPORT, .desc = desc_osreport },
+	  .flags = SF_ADVANCED, .mask = NIN_CFG_OSREPORT, .desc = desc_osreport },
 	{ .name = "Log to File", .category = CAT_ADVANCED, .kind = KIND_BOOL, .store = STORE_CONFIG,
-	  .mask = NIN_CFG_LOG, .desc = desc_log },
+	  .flags = SF_ADVANCED, .mask = NIN_CFG_LOG, .desc = desc_log },
 	{ .name = "Cheat Path", .category = CAT_ADVANCED, .kind = KIND_BOOL, .store = STORE_CONFIG,
-	  .mask = NIN_CFG_CHEAT_PATH, .desc = desc_cheat_path },
+	  .flags = SF_ADVANCED, .mask = NIN_CFG_CHEAT_PATH, .desc = desc_cheat_path },
 	{ .name = "TRI Arcade Mode", .category = CAT_ADVANCED, .kind = KIND_BOOL, .store = STORE_CONFIG,
-	  .mask = NIN_CFG_ARCADE_MODE, .desc = desc_tri_arcade },
+	  .flags = SF_ADVANCED, .mask = NIN_CFG_ARCADE_MODE, .desc = desc_tri_arcade },
+	{ .name = "Reset Settings", .category = CAT_ADVANCED, .kind = KIND_ACTION,
+	  .flags = SF_ADVANCED, .action = Action_ResetSettings, .desc = desc_reset },
 };
 #define NUM_SETTINGS (sizeof(Settings) / sizeof(Settings[0]))
 
@@ -663,6 +734,8 @@ static const SettingDef Settings[] =
 
 static bool Setting_IsVisible(const SettingDef *d)
 {
+	if ((d->flags & SF_ADVANCED) && !(ncfg->Config & NIN_CFG_SHOW_ADVANCED))
+		return false;
 	if ((d->flags & SF_WII_ONLY) && IsWiiU())
 		return false;
 	if ((d->flags & SF_WIIU_ONLY) && !IsWiiU())
@@ -731,6 +804,9 @@ static bool Setting_Adjust(const SettingDef *d, s32 delta)
 	s32 min, count;
 	switch (d->kind)
 	{
+		case KIND_ACTION:
+			if (d->action) d->action();
+			return true;
 		case KIND_INT:
 			min = d->min;
 			count = d->max - d->min + 1;
@@ -762,6 +838,9 @@ static void Setting_FormatValue(const SettingDef *d, char *buf, size_t len)
 	const s32 v = Setting_Get(d);
 	switch (d->kind)
 	{
+		case KIND_ACTION:
+			buf[0] = 0;
+			break;
 		case KIND_INT:
 			if (d->format) d->format(v, buf, len);
 			else snprintf(buf, len, "%d", v);
@@ -953,7 +1032,11 @@ void SettingsMenu_Draw(const SettingsMenuState *st)
 		if (sel)
 			PrintFormat(MENU_SIZE, SM_COLOR_ITEM, SM_X_CURSOR, SettingY(row), ARROW_RIGHT);
 
-		if (sel && d->kind != KIND_BOOL)
+		if (d->kind == KIND_ACTION)
+		{
+			PrintFormat(MENU_SIZE, SM_COLOR_ITEM, SM_X_ITEM, SettingY(row), "%s", d->name);
+		}
+		else if (sel && d->kind != KIND_BOOL)
 		{
 			// Adjustable with Left/Right: show arrows around the value.
 			PrintFormat(MENU_SIZE, SM_COLOR_ITEM, SM_X_ITEM, SettingY(row), "%-*s: ", SM_NAME_WIDTH, d->name);

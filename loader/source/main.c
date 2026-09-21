@@ -799,12 +799,7 @@ int main(int argc, char **argv)
 		if (LoadNinCFG() == false)
 		{
 			memset(ncfg, 0, sizeof(NIN_CFG));
-
-			ncfg->Magicbytes = 0x01070CF6;
-			ncfg->Version = NIN_CFG_VERSION;
-			ncfg->Language = NIN_LAN_AUTO;
-			ncfg->MaxPads = NIN_CFG_MAXPAD;
-			ncfg->MemCardBlocks = 0x2;//251 blocks
+			SetDefaultNinCFG();
 		}
 
 		// Prevent autobooting if B is pressed
@@ -1068,52 +1063,58 @@ int main(int argc, char **argv)
 		snprintf(BasePath, sizeof(BasePath), "%s:/saves", GetRootDevice());
 		f_mkdir_char(BasePath);
 
-		char MemCardName[8];
-		memset(MemCardName, 0, 8);
-		if ( ncfg->Config & NIN_CFG_MC_MULTI )
+		// Slot A always; Slot B only if Slot B emulation is enabled.
+		// File naming must match GCNCard_Load() in the kernel:
+		//   Multi:  ninmem[j][b].raw
+		//   Single: GameID[_B].raw
+		const int numSlots = (ncfg->Config & NIN_CFG_MC_SLOTB_EMU) ? 2 : 1;
+		int slot;
+		for (slot = 0; slot < numSlots; slot++)
 		{
-			// "Multi" mode is enabled.
-			// Use one memory card for USA/PAL games,
-			// and another memory card for JPN games.
-			switch (BI2region)
+			char MemCardName[16];
+			if ( ncfg->Config & NIN_CFG_MC_MULTI )
 			{
-				case BI2_REGION_JAPAN:
-				case BI2_REGION_SOUTH_KOREA:
-				default:
-					// JPN games.
-					memcpy(MemCardName, "ninmemj", 7);
-					break;
-
-				case BI2_REGION_USA:
-				case BI2_REGION_PAL:
-					// USA/PAL games.
-					memcpy(MemCardName, "ninmem", 6);
-					break;
+				// "Multi" mode is enabled.
+				// Use one memory card for USA/PAL games,
+				// and another memory card for JPN games.
+				// Only JPN and KOR take the 'j': GCNCard_Load() in the
+				// kernel tests for exactly those two, and GenerateMemCard()
+				// formats any other region as USA/PAL.
+				const bool isJPN = (BI2region == BI2_REGION_JAPAN ||
+						    BI2region == BI2_REGION_SOUTH_KOREA);
+				snprintf(MemCardName, sizeof(MemCardName), "ninmem%s%s",
+					 isJPN ? "j" : "", slot ? "b" : "");
 			}
-		}
-		else
-		{
-			// One card per game.
-			memcpy(MemCardName, &(ncfg->GameID), 4);
-		}
-
-		char MemCard[32];
-		snprintf(MemCard, sizeof(MemCard), "%s/%s.raw", BasePath, MemCardName);
-		gprintf("Using %s as Memory Card.\r\n", MemCard);
-		FIL f;
-		if (f_open_char(&f, MemCard, FA_READ|FA_OPEN_EXISTING) != FR_OK)
-		{
-			// Memory card file not found. Create it.
-			if(GenerateMemCard(MemCard, BI2region) == false)
+			else
 			{
-				ClearScreen();
-				ShowMessageScreenAndExit("Failed to create Memory Card File!", 1);
+				// One card per game.
+				snprintf(MemCardName, sizeof(MemCardName), "%.4s%s",
+					 (const char*)&(ncfg->GameID), slot ? "_B" : "");
 			}
-		}
-		else
-		{
-			// Memory card file found.
-			f_close(&f);
+
+			char MemCard[40];
+			snprintf(MemCard, sizeof(MemCard), "%s/%s.raw", BasePath, MemCardName);
+			gprintf("Using %s as Memory Card (Slot %c).\r\n", MemCard, 'A' + slot);
+			FIL f;
+			if (f_open_char(&f, MemCard, FA_READ|FA_OPEN_EXISTING) != FR_OK)
+			{
+				// Memory card file not found. Create it.
+				if(GenerateMemCard(MemCard, BI2region) == false)
+				{
+					if (slot == 0)
+					{
+						ClearScreen();
+						ShowMessageScreenAndExit("Failed to create Memory Card File!", 1);
+					}
+					// Slot B failure is not fatal; the kernel disables Slot B.
+					gprintf("Failed to create Slot B Memory Card File.\r\n");
+				}
+			}
+			else
+			{
+				// Memory card file found.
+				f_close(&f);
+			}
 		}
 	}
 	else

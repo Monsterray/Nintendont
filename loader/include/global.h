@@ -169,6 +169,7 @@ void unzip_data(const void *input, const unsigned int input_size,
 bool LoadNinCFG(void);
 
 void UpdateNinCFG();
+void SetDefaultNinCFG(void);
 bool IsGCGame(u8 *Buffer);
 int CreateNewFile(const char *Path, unsigned int size);
 
