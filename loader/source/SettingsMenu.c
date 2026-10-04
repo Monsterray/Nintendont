@@ -341,6 +341,7 @@ static void Action_ResetSettings(void)
 static const char *const OnOffLabels[]		= { "Off", "On" };
 static const char *const NoYesLabels[]		= { "No", "Yes" };
 static const char *const ReadSpeedLabels[]	= { "Authentic", "Unlocked" };
+static const char *const DiscCacheLabels[]	= { "Normal", "Large" };
 
 /** Descriptions. Keep lines <= 29 characters. **/
 
@@ -378,6 +379,20 @@ static const char *const desc_readspeed[] = {
 	"times, but can cause problems",
 	"in games that are extremely",
 	"sensitive to disc timing.",
+	NULL
+};
+static const char *const desc_disc_cache[] = {
+	"Normal keeps a 3MB cache of",
+	"recently read disc data.",
+	"",
+	"Large uses up to 30MB, so",
+	"games read from the storage",
+	"device less often.",
+	"",
+	"Large can make some games",
+	"hang or stop audio, such as",
+	"Tales of Symphonia. Not used",
+	"for Triforce games.",
 	NULL
 };
 static const char *const desc_skip_ipl[] = {
@@ -650,6 +665,8 @@ static const SettingDef Settings[] =
 	  .mask = NIN_CFG_CHEATS, .desc = desc_cheats },
 	{ .name = "Read Speed", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
 	  .mask = NIN_CFG_REMLIMIT, .labels = ReadSpeedLabels, .count = 2, .desc = desc_readspeed },
+	{ .name = "Disc Cache", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
+	  .mask = NIN_CFG_LARGE_CACHE, .labels = DiscCacheLabels, .count = 2, .desc = desc_disc_cache },
 	{ .name = "Skip IPL", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,
 	  .mask = NIN_CFG_SKIP_IPL, .labels = NoYesLabels, .count = 2, .desc = desc_skip_ipl },
 	{ .name = "Drive Access LED", .category = CAT_GENERAL, .kind = KIND_BOOL, .store = STORE_CONFIG,

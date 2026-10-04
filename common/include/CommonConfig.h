@@ -54,6 +54,7 @@ enum ninconfigbitpos
 	NIN_CFG_BIT_BBA_EMU		= (19),
 	NIN_CFG_BIT_MC_SLOTB_EMU	= (20),	// Emulate a second memory card in Slot B
 	NIN_CFG_BIT_SHOW_ADVANCED	= (21),	// Loader UI only: show advanced settings
+	NIN_CFG_BIT_LARGE_CACHE	= (22),	// Use the large ISO cache instead of 3MB
 
 	// Internal kernel settings.
 	NIN_CFG_BIT_MC_SLOTB	= (31),	// Slot B image is loaded
@@ -85,6 +86,7 @@ enum ninconfig
 	NIN_CFG_BBA_EMU		= (1<<NIN_CFG_BIT_BBA_EMU),
 	NIN_CFG_MC_SLOTB_EMU	= (1<<NIN_CFG_BIT_MC_SLOTB_EMU),
 	NIN_CFG_SHOW_ADVANCED	= (1<<NIN_CFG_BIT_SHOW_ADVANCED),	// Loader UI only
+	NIN_CFG_LARGE_CACHE	= (1<<NIN_CFG_BIT_LARGE_CACHE),
 
 	NIN_CFG_MC_SLOTB	= (1<<NIN_CFG_BIT_MC_SLOTB),
 };
