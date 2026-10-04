@@ -248,6 +248,32 @@ bool FPAD_Y( bool ILock )
 	return false;
 }
 
+bool FPAD_L( bool ILock )
+{
+	if( !ILock && SLock ) return false;
+
+	if( (WPAD_Pressed & (WPAD_BUTTON_MINUS|WPAD_CLASSIC_BUTTON_MINUS|WPAD_CLASSIC_BUTTON_FULL_L)) || ( PAD_Pressed & PAD_TRIGGER_L ) || (WiiDRC_Pressed & (WIIDRC_BUTTON_MINUS|WIIDRC_BUTTON_L)) )
+	{
+		Repeat = 0;
+		SLock = true;
+		return true;
+	}
+	return false;
+}
+
+bool FPAD_R( bool ILock )
+{
+	if( !ILock && SLock ) return false;
+
+	if( (WPAD_Pressed & (WPAD_BUTTON_PLUS|WPAD_CLASSIC_BUTTON_PLUS|WPAD_CLASSIC_BUTTON_FULL_R)) || ( PAD_Pressed & PAD_TRIGGER_R ) || (WiiDRC_Pressed & (WIIDRC_BUTTON_PLUS|WIIDRC_BUTTON_R)) )
+	{
+		Repeat = 0;
+		SLock = true;
+		return true;
+	}
+	return false;
+}
+
 bool FPAD_Cancel( bool ILock )
 {
 	if( !ILock && SLock ) return false;

@@ -943,6 +943,8 @@ u32 SettingsMenu_Update(SettingsMenuState *st, const SettingsMenuInput *in)
 	s32 catDelta = 0;
 	if (in->nextTab)
 		catDelta = +1;
+	else if (in->prevTab)
+		catDelta = -1;
 	else if (st->pos < 0 && in->right)
 		catDelta = +1;
 	else if (st->pos < 0 && in->left)
@@ -954,7 +956,7 @@ u32 SettingsMenu_Update(SettingsMenuState *st, const SettingsMenuInput *in)
 	{
 		st->category = NextCategory(st->category, catDelta);
 		n = BuildVisibleList(st->category, list, NUM_SETTINGS);
-		st->pos = in->nextTab ? 0 : -1;
+		st->pos = (in->nextTab || in->prevTab) ? 0 : -1;
 		st->scroll = 0;
 		ret |= SMENU_REDRAW;
 	}
@@ -1084,7 +1086,7 @@ void SettingsMenu_Draw(const SettingsMenuState *st)
 
 	/** Button help. **/
 	PrintFormat(MENU_SIZE, SM_COLOR_HELP, SM_X_ITEM, SettingY(SM_ROW_HELP),
-		    "A: Change   Left/Right: Adjust   Y/2: Next Tab");
+		    "A: Change   Left/Right: Adjust   L/R or -/+: Tab");
 	PrintFormat(MENU_SIZE, SM_COLOR_HELP, SM_X_ITEM, SettingY(SM_ROW_HELP + 1),
 		    "B: Game List   X/1: Update Nintendont");
 }
