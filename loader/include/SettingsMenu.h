@@ -52,7 +52,8 @@ typedef struct SettingsMenuInput
 	bool left;
 	bool right;
 	bool ok;	// A
-	bool nextTab;	// Y / 2
+	bool nextTab;	// R / Plus (or Y / 2)
+	bool prevTab;	// L / Minus
 } SettingsMenuInput;
 
 // Return flags from SettingsMenu_Update().

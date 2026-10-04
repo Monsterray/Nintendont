@@ -51,5 +51,8 @@ bool FPAD_Cancel( bool ILock );
 bool FPAD_Start( bool ILock );
 bool FPAD_X( bool ILock );
 bool FPAD_Y( bool ILock );
+// Shoulder buttons, for paging: L or Minus, R or Plus, on every controller.
+bool FPAD_L( bool ILock );
+bool FPAD_R( bool ILock );
 
 #endif
