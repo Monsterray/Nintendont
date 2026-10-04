@@ -835,7 +835,8 @@ static bool UpdateSettingsMenu(MenuCtx *ctx)
 	in.left    = FPAD_Left_Repeat(ctx);
 	in.right   = FPAD_Right_Repeat(ctx);
 	in.ok      = FPAD_OK(0);
-	in.nextTab = FPAD_Y(0);
+	in.nextTab = FPAD_R(0) || FPAD_Y(0);
+	in.prevTab = FPAD_L(0);
 
 	const u32 ret = SettingsMenu_Update(&ctx->settings, &in);
 	if (ret & SMENU_CHANGED)
