@@ -19,7 +19,7 @@ EXISelect:
 	lwz		r7,	NinCfgConfig@l(r7)
 	andis.	r7,	r7,	NIN_CFG_MC_SLOTB@h
 	bne		Emulated
-	lis		r7,	0xCC00
+	lis		r7,	0xCD80			# EXI channel 1 at 0xCD806814, as Patch.c maps EXI
 	lwz		r6,	0x6814(r7)		# channel 1 CSR
 	andi.	r6,	r6,	0x405
 	li		r0,	0x80

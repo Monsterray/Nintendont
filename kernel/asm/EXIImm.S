@@ -29,7 +29,7 @@ EXIImm:
 	lwz		r9,	NinCfgConfig@l(r9)
 	andis.	r9,	r9,	NIN_CFG_MC_SLOTB@h
 	bne		Emulated
-	lis		r9,	0xCC00			# EXI channel 1: 0xCC006814
+	lis		r9,	0xCD80			# EXI channel 1 at 0xCD806814, as Patch.c maps EXI
 	mtxer	r5
 	lswx	r10,	0,	r4		# 1-4 bytes, left-aligned
 	stw		r10,	0x6824(r9)		# DATA

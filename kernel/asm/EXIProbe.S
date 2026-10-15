@@ -26,7 +26,7 @@ EXIProbe:
 	# Slot B is not emulated: report the real slot, e.g. a GameCube
 	# Microphone. EXT (bit 12 of channel 1's status) is set while a
 	# device is plugged in.
-	lis	r4,	0xCC00
+	lis	r4,	0xCD80			# EXI channel 1 at 0xCD806814, as Patch.c maps EXI
 	lwz	r4,	0x6814(r4)
 	andi.	r4,	r4,	0x1000
 	bne	True
