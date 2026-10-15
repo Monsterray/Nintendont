@@ -36,6 +36,7 @@ u32 ISOFileOpen = 0;
 #define CACHE_MAX		0x400
 #define CACHE_START		(u8*)0x11000000
 #define CACHE_SIZE		0x300000
+#define CACHE_SIZE_LARGE	0x1E80000	// opt-in: up to DI_READ_BUFFER at 0x12E80000
 #define CACHE_MIN		0x100000	// smallest cache, see ISOSetupCache()
 
 
@@ -412,13 +413,19 @@ void ISOSetupCache()
 			// Get the total card size from GCNCard.c.
 			MemCardSize = GCNCard_GetTotalSize();
 		}
+		// The large cache is opt-in (Settings > Disc Cache) and runs right up
+		// to the DI read buffer. 3MB stays the default because it fixes the
+		// Tales of Symphonia hang and HPS audio cutting out (d948ded).
+		// Triforce never gets here: SegaBoot and DIMM memory sit higher up.
+		if (ConfigGetConfig(NIN_CFG_LARGE_CACHE))
+			DCacheLimit = CACHE_SIZE_LARGE;
 		DCCache += MemCardSize; //memcard is before cache
-		// The cards share CACHE_SIZE with the cache, and a card of 507
+		// The cards share this window with the cache, and a card of 507
 		// blocks (4MB) or two 251-block cards are already bigger than it.
 		// Subtracting them would wrap the unsigned limit, the cache would
 		// never flush, and it would grow into the DI buffer and the kernel.
 		// Keep the 1MB the default 251-block card leaves instead.
-		if (MemCardSize < CACHE_SIZE - CACHE_MIN)
+		if (MemCardSize < DCacheLimit - CACHE_MIN)
 			DCacheLimit -= MemCardSize;
 		else
 			DCacheLimit = CACHE_MIN;
