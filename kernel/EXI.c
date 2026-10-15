@@ -165,13 +165,26 @@ void EXIInit(void)
  */
 void EXISlotBUpdate(void)
 {
+	static u32 LastIRQ = 0;
 	if (!SlotBReal)
 		return;
 	u32 csr = read32(EXI1_CSR);
 	if ((csr & 2) == 0)
+	{
+		// While the device streams (the mic: a buffer every 1.45 ms), the log's
+		// file writes would make this poll late: hold them until 50 ms of quiet.
+		if (LastIRQ && TimerDiffTicks(LastIRQ) > 94922)
+		{
+			LastIRQ = 0;
+			LogHold(false);
+		}
 		return;
+	}
 	write32(EXI1_CSR, (csr & ~0x808) | 2);	// clear EXIINT only (TCINT, EXTINT are write-1-to-clear too)
 	EXIRaise(0, 2, 0);
+	if (!LastIRQ)
+		LogHold(true);
+	LastIRQ = read32(HW_TIMER);
 }
 
 extern vu32 TRIGame;
