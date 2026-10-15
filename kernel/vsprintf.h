@@ -9,4 +9,6 @@ int _sprintf( char *buf, const char *fmt, ... );
 //int dbgprintf( const char *fmt, ...);
 void CheckOSReport(void);
 void closeLog(void);
+void LogFlush(void);
+void LogHold(bool hold);
 #endif
