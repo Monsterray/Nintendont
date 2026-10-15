@@ -57,7 +57,11 @@ static u32 IRQ_Cause[4] = {0, 0, 0, 0};
 // Slot B pass-through: Slot B is the real slot, not a card image.
 static bool SlotBReal = false;
 #ifdef NIN_TEST
-u32 SlotBInterrupts = 0;	// test builds: printed at exit (main.c)
+// Test builds, printed at exit (main.c): forwarded interrupts, and while the
+// device interrupts, polls more than one mic buffer (1.45 ms) apart and the
+// longest gap between polls, in timer ticks.
+u32 SlotBInterrupts = 0, SlotBLate = 0, SlotBMaxGap = 0;
+static u32 SlotBLastPoll = 0, SlotBLastIRQ = 0;
 #endif
 static void EXIRaise(u32 ch0, u32 ch1, u32 ch2);
 #define EXI1_CSR	0x0D806814	// real EXI channel 1 status, as the Starlet sees it
@@ -170,6 +174,18 @@ void EXISlotBUpdate(void)
 {
 	if (!SlotBReal)
 		return;
+#ifdef NIN_TEST
+	u32 now = read32(HW_TIMER);
+	if (SlotBLastIRQ && now - SlotBLastIRQ < 19000)	// interrupted in the last 10 ms
+	{
+		u32 gap = now - SlotBLastPoll;
+		if (gap > SlotBMaxGap)
+			SlotBMaxGap = gap;
+		if (gap > 2750)	// 1.45 ms
+			SlotBLate++;
+	}
+	SlotBLastPoll = now;
+#endif
 	u32 csr = read32(EXI1_CSR);
 	if ((csr & 2) == 0)
 		return;
@@ -177,6 +193,7 @@ void EXISlotBUpdate(void)
 	EXIRaise(0, 2, 0);
 #ifdef NIN_TEST
 	SlotBInterrupts++;
+	SlotBLastIRQ = now;
 #endif
 }
 
