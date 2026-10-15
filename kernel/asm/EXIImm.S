@@ -47,17 +47,17 @@ Wait:
 	# Test builds: count Slot B transfers and keep the last DATA word,
 	# for the kernel's log at exit (kernel/main.c).
 	lis		r11,	0xD300
-	lwz		r0,	0x307C(r11)
+	lwz		r0,	0x30A0(r11)
 	addi	r0,	r0,	1
-	stw		r0,	0x307C(r11)
-	stw		r10,	0x3078(r11)
+	stw		r0,	0x30A0(r11)
+	stw		r10,	0x30A4(r11)
 	cmpwi	r5,	2			# a status read: count the mic's overflow bit
 	bne		NoOverflow
 	andis.	r0,	r10,	0x0200
 	beq		NoOverflow
-	lwz		r0,	0x3088(r11)
+	lwz		r0,	0x30AC(r11)
 	addi	r0,	r0,	1
-	stw		r0,	0x3088(r11)
+	stw		r0,	0x30AC(r11)
 NoOverflow:
 .endif
 	cmpwi	r6,	1			# a write returns nothing

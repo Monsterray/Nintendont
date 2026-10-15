@@ -57,14 +57,14 @@ static void TestSlotBReport(void)
 	char buf[512];
 	FIL f;
 	UINT done;
-	sync_before_read((void*)0x13003060, 0x40);
+	sync_before_read((void*)0x130030A0, 0x20);
 	int n = _sprintf(buf,
 		"transfers %u, last word %08X\r\n"
 		"interrupts forwarded %u, DMAs %u, overflows %u\r\n"
 		"late polls %u, longest gap %u us\r\n"
 		"EXI control (0x0D800070) at start %08X, at exit %08X\r\n",
-		read32(0x1300307C), read32(0x13003078),
-		SlotBInterrupts, read32(0x13003084), read32(0x13003088),
+		read32(0x130030A0), read32(0x130030A4),
+		SlotBInterrupts, read32(0x130030A8), read32(0x130030AC),
 		SlotBLate, SlotBMaxGap * 10 / 19,
 		TestEXICtrlStart, read32(0x0D800070));
 	if (f_open_char(&f, "/slotb.txt", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
@@ -328,10 +328,11 @@ int _main( int argc, char *argv[] )
 #ifdef NIN_TEST
 	u32 TestTimer = Now;
 	write32(TEST_EXIT, 0);
-	write32(0x13003078, 0);	// Slot B pass-through: last DATA word (EXIImm.S)
-	write32(0x1300307C, 0);	// and transfer count
-	write32(0x13003084, 0);	// Slot B DMA count (EXIDMASlotB.S)
-	write32(0x13003088, 0);	// mic status reads with the overflow bit (EXIImm.S)
+	write32(0x130030A4, 0);	// Slot B pass-through: last DATA word (EXIImm.S)
+	write32(0x130030A0, 0);	// and transfer count
+	write32(0x130030A8, 0);	// Slot B DMA count (EXIDMASlotB.S)
+	write32(0x130030AC, 0);	// mic status reads with the overflow bit (EXIImm.S)
+	sync_after_write((void*)0x130030A0, 0x20);	// the PPC counts there, uncached
 	TestEXICtrlStart = read32(0x0D800070);
 	sync_after_write((void*)TEST_EXIT, 0x20);
 	dbgprintf("TEST: exit after %u s\r\n", NIN_TEST);
@@ -536,14 +537,14 @@ int _main( int argc, char *argv[] )
 			dbgprintf("Game Exit\r\n");
 			DIFinishAsync();
 #ifdef NIN_TEST
-			sync_before_read((void*)0x13003060, 0x20);
+			sync_before_read((void*)0x130030A0, 0x20);
 			dbgprintf("TEST: Slot B pass-through: %u transfers, last word %08X\r\n",
-				  read32(0x1300307C), read32(0x13003078));
+				  read32(0x130030A0), read32(0x130030A4));
 			{
 				extern u32 SlotBInterrupts, SlotBLate, SlotBMaxGap;
-				sync_before_read((void*)0x13003080, 0x20);
+				sync_before_read((void*)0x130030A0, 0x20);
 				dbgprintf("TEST: Slot B: %u interrupts forwarded, %u DMAs, %u overflows\r\n",
-					  SlotBInterrupts, read32(0x13003084), read32(0x13003088));
+					  SlotBInterrupts, read32(0x130030A8), read32(0x130030AC));
 				dbgprintf("TEST: Slot B: %u late polls, longest gap %u us\r\n",
 					  SlotBLate, SlotBMaxGap * 10 / 19);
 			}
