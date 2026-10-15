@@ -354,303 +354,208 @@ static const char *const ReadSpeedLabels[]	= { "Authentic", "Unlocked" };
 /** Descriptions. Keep lines <= 29 characters. **/
 
 static const char *const desc_autoboot[] = {
-	"Boot the selected game",
-	"immediately when Nintendont",
-	"starts.",
+	"On: Nintendont starts the selected game immediately.",
 	"",
-	"Hold B while Nintendont is",
-	"loading to cancel and return",
-	"to this menu.",
+	"To show this menu, hold B while Nintendont loads.",
 	NULL
 };
 static const char *const desc_language[] = {
-	"Set the system language.",
+	"Sets the system language.",
 	"",
-	"This option is normally only",
-	"found on PAL GameCubes, so",
-	"it usually won't have an",
-	"effect on NTSC games.",
+	"Most PAL games use this setting. Most NTSC games do not use it.",
 	NULL
 };
 static const char *const desc_cheats[] = {
-	"Load Gecko/Ocarina cheat",
-	"codes from /codes/GAMEID.gct",
-	"on the storage device.",
+	"Loads Gecko or Ocarina cheat codes from /codes/GAMEID.gct on the storage device.",
 	NULL
 };
 static const char *const desc_readspeed[] = {
-	"Authentic emulates the speed",
-	"of the original GameCube",
-	"disc drive.",
+	"Authentic: discs read at the speed of a GameCube drive.",
 	"",
-	"Unlocked allows faster load",
-	"times, but can cause problems",
-	"in games that are extremely",
-	"sensitive to disc timing.",
+	"Unlocked: discs read faster, so games load faster.",
+	"",
+	"CAUTION: Unlocked can cause errors in games that need the authentic disc timing.",
 	NULL
 };
 static const char *const desc_skip_ipl[] = {
-	"Skip loading the GameCube",
-	"IPL, even if it's present",
-	"on the storage device.",
+	"Does not start the GameCube IPL (boot animation) from the storage device.",
 	NULL
 };
 static const char *const desc_led[] = {
-	"Use the drive slot LED as a",
-	"disk activity indicator.",
-	"",
-	"The LED will be turned on",
-	"when reading from or writing",
-	"to the storage device.",
+	"Turns on the disc slot light when Nintendont reads from or writes to the storage device.",
 	NULL
 };
 static const char *const desc_show_advanced[] = {
-	"Show the Advanced tab and",
-	"other rarely used options.",
+	"Shows the Advanced tab and the settings that you seldom use.",
 	"",
-	"Advanced options can break",
-	"games when set incorrectly.",
+	"CAUTION: Incorrect advanced settings can cause errors in games.",
 	NULL
 };
 
 static const char *const desc_video_mode[] = {
-	"Auto: pick the video mode",
-	"from the game's region.",
+	"Auto: the game region sets the video mode.",
 	"",
-	"Force: patch the game to the",
-	"mode selected below.",
+	"Force: Nintendont patches the game to the mode below.",
 	"",
-	"None: leave the game's own",
-	"video mode untouched.",
+	"None: Nintendont does not change the video mode.",
 	NULL
 };
 static const char *const desc_forced_mode[] = {
-	"Video mode to force when",
-	"Video Mode is set to Force.",
+	"The video mode that Nintendont uses when Video Mode is Force.",
 	NULL
 };
 static const char *const desc_deflicker[] = {
-	"Override the game's vertical",
-	"deflicker filter.",
+	"Changes the vertical deflicker filter of the game.",
 	"",
-	"Forcing it off gives a",
-	"sharper picture on modern",
-	"displays. Forcing it on can",
-	"reduce flicker on CRTs.",
+	"Force Off: the picture is sharper on modern displays.",
+	"",
+	"Force On: CRT displays flicker less.",
 	NULL
 };
 static const char *const desc_force_prog[] = {
-	"Patch games to always output",
-	"480p (progressive scan).",
+	"Patches games to always send 480p (progressive scan).",
 	"",
-	"Requires component cables, or",
-	"an HDMI cable on Wii U.",
+	"You must use component cables, or HDMI on Wii U.",
 	NULL
 };
 static const char *const desc_patch_pal50[] = {
-	"Also patch PAL50 (576i) video",
-	"modes when forcing a mode.",
+	"Also patches PAL50 (576i) video modes when Video Mode is Force.",
 	"",
-	"Some PAL games only work",
-	"correctly with this off.",
+	"If a PAL game does not operate correctly, set this to Off.",
 	NULL
 };
 static const char *const desc_force_wide[] = {
-	"Patch games to use a 16:9",
-	"aspect ratio. (widescreen)",
+	"Patches games to show a 16:9 (widescreen) picture.",
 	"",
-	"Not all games support this",
-	"option. The patches will not",
-	"be applied to games that have",
-	"built-in support for 16:9;",
-	"use the game's options screen",
-	"to set the display mode.",
+	"Not all games accept this patch.",
+	"Nintendont does not patch a game that has its own 16:9 option.",
+	"For these games, use the options screen of the game.",
 	NULL
 };
 static const char *const desc_wiiu_wide[] = {
-	"On Wii U, Nintendont sets the",
-	"display to 4:3, which results",
-	"in bars on the sides of the",
-	"screen. If the game supports",
-	"widescreen, turn this on to",
-	"set the display back to 16:9.",
+	"On Wii U, Nintendont sets the display to 4:3, with black bars at the sides.",
+	"",
+	"If the game has a widescreen mode, set this to On to set the display to 16:9.",
 	NULL
 };
 static const char *const desc_video_width[] = {
-	"Horizontal picture width in",
-	"pixels. Use this to remove",
-	"black borders or fix an",
-	"overscanned picture.",
+	"Sets the width of the picture, in pixels.",
+	"Use it to remove black borders or to correct overscan.",
 	"",
-	"Auto keeps the game's value.",
+	"Auto: Nintendont uses the width of the game.",
 	NULL
 };
 static const char *const desc_screen_pos[] = {
-	"Shift the picture left or",
-	"right by up to 20 pixels.",
+	"Moves the picture left or right, by a maximum of 20 pixels.",
 	NULL
 };
 
 static const char *const desc_native_si[] = {
-	"Native Control allows use of",
-	"GBA link cables on original",
-	"Wii systems.",
+	"The game uses the GameCube controller ports directly.",
+	"Use this for GBA link cables on an original Wii.",
 	"",
-	"NOTE: Enabling Native Control",
-	"will disable Bluetooth and",
-	"USB HID controllers.",
+	"NOTE: Bluetooth and USB HID controllers do not operate when this is On.",
 	NULL
 };
 static const char *const desc_max_pads[] = {
-	"Set the maximum number of",
-	"native GameCube controller",
-	"ports to use on Wii.",
+	"The number of GameCube controller ports that Nintendont uses on Wii.",
 	"",
-	"This should usually be kept",
-	"at 4 to enable all ports.",
+	"Set 4 to use all the ports.",
 	NULL
 };
 static const char *const desc_cc_rumble[] = {
-	"Enable rumble on Wii Remotes",
-	"when using the Wii Classic",
-	"Controller or Wii Classic",
-	"Controller Pro.",
+	"Turns on rumble in the Wii Remote when you use a Classic Controller or Classic Controller Pro.",
 	NULL
 };
 static const char *const desc_gamepad_slot[] = {
-	"GameCube controller port the",
-	"Wii U GamePad is mapped to.",
+	"The GameCube controller port for the Wii U GamePad.",
 	"",
-	"Set to None to disable the",
-	"GamePad as a controller.",
+	"None: the GamePad is not a controller.",
 	NULL
 };
 
 static const char *const desc_mcemu[] = {
-	"Emulates a memory card in",
-	"Slot A using a .raw file.",
+	"Emulates a memory card in Slot A with a .raw file.",
 	"",
-	"Disable this option if you",
-	"want to use a real memory",
-	"card on an original Wii.",
+	"Set this to Off to use real memory cards or the GameCube Microphone (Slot B).",
+	"Only an original Wii has these slots.",
 	NULL
 };
 static const char *const desc_card_size[] = {
-	"Size for newly created",
-	"memory card images, in",
-	"blocks.",
+	"The size of new memory card images, in blocks.",
 	"",
-	"NOTE: Sizes larger than 251",
-	"blocks are known to cause",
-	"issues.",
+	"CAUTION: Cards larger than 251 blocks can cause errors.",
 	NULL
 };
 static const char *const desc_mc_multi[] = {
-	"Nintendont usually uses one",
-	"emulated memory card image",
-	"per game.",
+	"Off: each game has its own memory card image.",
 	"",
-	"Multi Card switches this",
-	"to one image for all USA and",
-	"PAL games and one image for",
-	"all JPN games.",
+	"On: all USA and PAL games use one image. All JPN games use a different image.",
 	NULL
 };
 static const char *const desc_mc_slotb[] = {
-	"Also emulate a memory card",
-	"in Slot B, stored as a",
-	"separate .raw file.",
+	"Also emulates a memory card in Slot B, in a different .raw file.",
 	"",
-	"Experimental: some games",
-	"report the Slot B card as",
-	"damaged. Not used with",
-	"Triforce games.",
+	"CAUTION: Experimental. Some games show the Slot B card as damaged.",
+	"Triforce games do not use this setting.",
 	NULL
 };
 static const char *const desc_hybrid_exi[] = {
-	"If virtual memory card is",
-	"enabled, this option enables",
-	"slot 2 (Slot B) for hardware",
-	"peripherals such as the",
-	"microphone. Does nothing",
-	"on Wii U.",
-	"(Experimental)",
+	"Slot A uses the emulated memory card. Slot B uses the real device in the slot,",
+	"for example the GameCube Microphone.",
+	"",
+	"CAUTION: Experimental. Triforce games do not use this setting.",
 	NULL
 };
 
 static const char *const desc_bba[] = {
-	"Enable BBA Emulation in the",
-	"following supported titles",
-	"including all their regions:",
+	"Emulates the Broadband Adapter in these games, all regions:",
 	"",
-	"Mario Kart: Double Dash!!",
-	"Kirby Air Ride",
-	"1080 Avalanche",
-	"PSO Episode 1&2",
-	"PSO Episode III",
-	"Homeland",
+	"Mario Kart: Double Dash!!, Kirby Air Ride, 1080 Avalanche, PSO Episode 1&2,",
+	"PSO Episode III, Homeland.",
 	NULL
 };
 static const char *const desc_netprof[] = {
-	"Force a Network Profile",
-	"to use for BBA Emulation.",
+	"The network profile that BBA emulation uses.",
 	"",
-	"Auto uses the profile that",
-	"is currently active. Profiles",
-	"that cannot connect to the",
-	"internet can also be used.",
+	"Auto: Nintendont uses the active profile.",
+	"You can also use a profile that has no internet connection.",
 	NULL
 };
 
 static const char *const desc_debugger[] = {
-	"Enable the Gecko debugger",
-	"hook. Requires a USB Gecko",
-	"in memory card Slot B.",
+	"Installs the Gecko debugger hook.",
+	"You must have a USB Gecko in memory card Slot B.",
 	NULL
 };
 static const char *const desc_debugwait[] = {
-	"Pause at game start until",
-	"the debugger connects.",
+	"Stops the game at the start until the debugger connects.",
 	NULL
 };
 static const char *const desc_osreport[] = {
-	"Print the game's OSReport",
-	"debug output to the USB",
-	"Gecko / log.",
+	"Sends the OSReport debug output of the game to the USB Gecko and the log.",
 	NULL
 };
 static const char *const desc_log[] = {
-	"Write the kernel debug log",
-	"to /ndebug.log on the",
-	"storage device.",
+	"Writes the kernel debug log to /ndebug.log on the storage device.",
 	"",
-	"Slows down loading. Only",
-	"enable this when asked for",
-	"a bug report.",
+	"NOTE: Games load slower. Use this only to find a problem.",
 	NULL
 };
 static const char *const desc_cheat_path[] = {
-	"Use the cheat file path",
-	"passed in by the launching",
-	"application instead of",
-	"/codes/GAMEID.gct.",
+	"Uses the cheat file path from the application that started Nintendont, not /codes/GAMEID.gct.",
 	NULL
 };
 static const char *const desc_tri_arcade[] = {
-	"Arcade Mode re-enables the",
-	"coin slot functionality of",
-	"Triforce games.",
+	"Turns on the coin slot in Triforce games.",
 	"",
-	"To insert a coin, move the",
-	"C stick in any direction.",
+	"To insert a coin, move the C stick in any direction.",
 	NULL
 };
 static const char *const desc_reset[] = {
-	"Reset every option to its",
-	"default value.",
+	"Sets all settings to their default values.",
 	"",
-	"The selected game and",
-	"storage device are kept.",
+	"The selected game and storage device do not change.",
 	NULL
 };
 
@@ -1133,8 +1038,9 @@ void SettingsMenu_Draw(const SettingsMenuState *st)
 	if (st->pos < 0)
 	{
 		static const char *const desc_tabs[] = {
-			"Left/Right: change category",
-			"Down: edit its settings",
+			"Left/Right: select a tab.",
+			"",
+			"Down: select a setting in this tab.",
 			NULL
 		};
 		desc = desc_tabs;
