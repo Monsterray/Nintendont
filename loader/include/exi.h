@@ -29,6 +29,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 void CheckForGecko(void);
 void closeLog(void);
+#ifdef NIN_TEST
+// Test builds: the loader's log to the PC (hbc-reborn's network log), see exi.c.
+void TestNetOpen(void);
+void TestNetClose(void);
+#endif
 
 #ifdef DEBUG
 // FIXME: Commit this first, and find other
