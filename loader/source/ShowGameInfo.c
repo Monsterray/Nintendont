@@ -36,8 +36,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "md5.h"
 #include "md5_db.h"
 
-// Dark gray for grayed-out menu items.
-#define DARK_GRAY 0x666666FF
 
 // String length macros.
 // Used for center alignment.
