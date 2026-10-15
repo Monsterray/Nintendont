@@ -36,12 +36,14 @@ extern u32 SettingY(u32 row);
 
 #define SM_ROW_TABS		0	// Category tab bar.
 #define SM_ROW_FIRST		2	// First setting row.
-#define SM_MAX_ROWS		14	// Setting rows shown at once.
+#define SM_MAX_ROWS		9	// Setting rows shown at once (the largest tab has 9).
+#define SM_ROW_DESC		12	// Description, below the list so it never meets a value.
+#define SM_DESC_ROWS		5
 #define SM_ROW_HELP		17	// Button help (2 lines).
 
 #define SM_X_CURSOR		(MENU_POS_X + 30)
 #define SM_X_ITEM		(MENU_POS_X + 50)
-#define SM_X_DESC		(MENU_POS_X + 320)
+#define SM_DESC_CHARS		53	// Wrap width; ends at x=605, inside TV overscan.
 
 #define SM_NAME_WIDTH		17	// Longest name is "Force Progressive" / "Wiimote CC Rumble".
 
@@ -1020,6 +1022,54 @@ u32 SettingsMenu_Update(SettingsMenuState *st, const SettingsMenuInput *in)
 	return ret;
 }
 
+static void DescFlush(char *line, u32 *len, u32 *row)
+{
+	if (*len == 0)
+		return;
+	line[*len] = 0;
+	if (*row < SM_ROW_DESC + SM_DESC_ROWS)
+		PrintFormat(MENU_SIZE, SM_COLOR_ITEM, SM_X_ITEM, SettingY(*row), "%s", line);
+	(*row)++;
+	*len = 0;
+}
+
+/**
+ * Draw a description below the list, word-wrapped to SM_DESC_CHARS.
+ * The table's lines are joined with spaces; an empty line starts a new line.
+ */
+static void DrawDescription(const char *const *desc)
+{
+	char line[SM_DESC_CHARS + 1];
+	u32 len = 0, row = SM_ROW_DESC;
+
+	for (; *desc; desc++)
+	{
+		const char *p = *desc;
+		if (!*p)
+			DescFlush(line, &len, &row);
+		while (*p)
+		{
+			while (*p == ' ')
+				p++;
+			const char *word = p;
+			while (*p && *p != ' ')
+				p++;
+			u32 wlen = p - word;
+			if (wlen == 0)
+				break;
+			if (wlen > SM_DESC_CHARS)
+				wlen = SM_DESC_CHARS;
+			if (len && len + 1 + wlen > SM_DESC_CHARS)
+				DescFlush(line, &len, &row);
+			if (len)
+				line[len++] = ' ';
+			memcpy(&line[len], word, wlen);
+			len += wlen;
+		}
+	}
+	DescFlush(line, &len, &row);
+}
+
 void SettingsMenu_Draw(const SettingsMenuState *st)
 {
 	u8 list[NUM_SETTINGS];
@@ -1094,14 +1144,7 @@ void SettingsMenu_Draw(const SettingsMenuState *st)
 		desc = Settings[list[st->pos]].desc;
 	}
 	if (desc)
-	{
-		u32 row = SM_ROW_FIRST;
-		for (; *desc && row < SM_ROW_HELP; desc++, row++)
-		{
-			if (**desc)
-				PrintFormat(MENU_SIZE, SM_COLOR_ITEM, SM_X_DESC, SettingY(row), "%s", *desc);
-		}
-	}
+		DrawDescription(desc);
 
 	/** Button help. **/
 	PrintFormat(MENU_SIZE, SM_COLOR_HELP, SM_X_ITEM, SettingY(SM_ROW_HELP),
