@@ -334,6 +334,7 @@ int _main( int argc, char *argv[] )
 	while (1)
 	{
 		_ahbMemFlush(0);
+		EXISlotBUpdate();	// twice a pass: the mic leaves 1.45 ms per buffer
 #ifdef PERFMON
 		loopCnt++;
 		if(TimerDiffTicks(loopPrintTimer) > 1898437)
@@ -393,6 +394,7 @@ int _main( int argc, char *argv[] )
 		}
 		else /* No device I/O so make sure this stays updated */
 			GetCurrentTime();
+		LogFlush();
 		udelay(20); //wait for other threads
 
 		if( WaitForRealDisc == 1 )
@@ -440,6 +442,7 @@ int _main( int argc, char *argv[] )
 		DIUpdateRegisters();
 		#ifdef PATCHALL
 		EXIUpdateRegistersNEW();
+		EXISlotBUpdate();
 		GCAMUpdateRegisters();
 		BTUpdateRegisters();
 		HIDUpdateRegisters(0);
