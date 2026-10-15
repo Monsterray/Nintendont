@@ -50,6 +50,30 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  * MEM1 to /mem1.bin on the game's device, for reading the game's state on the PC.
  */
 #define TEST_EXIT	0x13003074	// PPC 0xD3003074, read by PADReadGC
+static u32 TestEXICtrlStart;
+static void TestSlotBReport(void)
+{
+	extern u32 SlotBInterrupts, SlotBLate, SlotBMaxGap;
+	char buf[512];
+	FIL f;
+	UINT done;
+	sync_before_read((void*)0x13003060, 0x40);
+	int n = _sprintf(buf,
+		"transfers %u, last word %08X\r\n"
+		"interrupts forwarded %u, DMAs %u, overflows %u\r\n"
+		"late polls %u, longest gap %u us\r\n"
+		"EXI control (0x0D800070) at start %08X, at exit %08X\r\n",
+		read32(0x1300307C), read32(0x13003078),
+		SlotBInterrupts, read32(0x13003084), read32(0x13003088),
+		SlotBLate, SlotBMaxGap * 10 / 19,
+		TestEXICtrlStart, read32(0x0D800070));
+	if (f_open_char(&f, "/slotb.txt", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
+	{
+		f_write(&f, buf, n, &done);
+		f_close(&f);
+	}
+}
+
 static void TestDumpMEM1(void)
 {
 	FIL f;
@@ -308,6 +332,7 @@ int _main( int argc, char *argv[] )
 	write32(0x1300307C, 0);	// and transfer count
 	write32(0x13003084, 0);	// Slot B DMA count (EXIDMASlotB.S)
 	write32(0x13003088, 0);	// mic status reads with the overflow bit (EXIImm.S)
+	TestEXICtrlStart = read32(0x0D800070);
 	sync_after_write((void*)TEST_EXIT, 0x20);
 	dbgprintf("TEST: exit after %u s\r\n", NIN_TEST);
 #endif
@@ -522,6 +547,7 @@ int _main( int argc, char *argv[] )
 				dbgprintf("TEST: Slot B: %u late polls, longest gap %u us\r\n",
 					  SlotBLate, SlotBMaxGap * 10 / 19);
 			}
+			TestSlotBReport();
 			TestDumpMEM1();
 #endif
 			break;
