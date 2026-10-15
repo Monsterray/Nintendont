@@ -25,6 +25,17 @@ EXIDMA:
 CallbackSet:
 	stw		r7,	0x4(r8)		# callback
 
+	# Slot B (channel 1) not emulated: a real DMA, e.g. the GameCube
+	# Microphone's samples. Patch.c turns the nop into a branch to
+	# EXIDMASlotB.S, which returns to the caller itself.
+	cmpwi	r3,	1
+	bne		Emulated
+	lis		r9,	NinCfgConfig@h
+	lwz		r9,	NinCfgConfig@l(r9)
+	andis.	r9,	r9,	NIN_CFG_MC_SLOTB@h
+	bne		Emulated
+	nop					# EXIDMA_SLOTB_BRANCH in Patch.c
+Emulated:
 	lis		r8,	CH0_MASK
 	cmpwi		r3,	1
 	bne		MaskSet
