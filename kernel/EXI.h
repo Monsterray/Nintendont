@@ -53,6 +53,7 @@ void EXISetTimings(u32 TitleID, u32 Region);
 
 bool EXICheckTimer();
 void EXIInterrupt();
+void EXISlotBUpdate(void);
 
 /**
  * Get the total size of the loaded memory cards.

@@ -440,6 +440,7 @@ int _main( int argc, char *argv[] )
 		DIUpdateRegisters();
 		#ifdef PATCHALL
 		EXIUpdateRegistersNEW();
+		EXISlotBUpdate();
 		GCAMUpdateRegisters();
 		BTUpdateRegisters();
 		HIDUpdateRegisters(0);
