@@ -30,6 +30,10 @@ INCLUDES	:= include ../fatfs
 ASFLAGS := $(MACHDEP) -mregnames -D_LANGUAGE_ASSEMBLY
 CFLAGS	:= -O3 -g -std=gnu89 -Wno-format-truncation \
 	   -Wall $(MACHDEP) $(INCLUDE) -DDEBUG -DDEBUG_MODULE_PATCH -DARCH_IS_BIG_ENDIAN
+# Test builds for the bench: make TEST=seconds (see kernel/main.c, NIN_TEST).
+ifneq ($(TEST),)
+CFLAGS += -DNIN_TEST=$(TEST)
+endif
 CXXFLAGS := $(CFLAGS)
 
 # NOTE: Do NOT change to := - needed for proper expansion of $(CURDIR) later.

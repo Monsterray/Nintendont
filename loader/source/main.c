@@ -586,6 +586,10 @@ int main(int argc, char **argv)
 	//STM_RegisterEventHandler(HandleSTMEvent);
 
 	Initialise(argsboot);
+#ifdef NIN_TEST
+	TestNetOpen();
+	gprintf("TEST: loader up, argc %d, argsboot %d, cfg v%u\r\n", argc, argsboot, ncfg->Version);
+#endif
 
 	//for BT.c
 	CONF_GetPadDevices((conf_pads*)0x932C0000);
@@ -633,6 +637,9 @@ int main(int argc, char **argv)
 			}
 		}
 
+#ifdef NIN_TEST
+		gprintf("TEST: loading and patching IOS58\r\n");
+#endif
 		// Load and patch IOS58.
 		if (LoadKernel() < 0)
 		{
@@ -665,12 +672,20 @@ int main(int argc, char **argv)
 		__ES_Close();
 		fd = IOS_Open( dev_es, 0 );
 
+#ifdef NIN_TEST
+		gprintf("TEST: reloading IOS58\r\n");
+		TestNetClose();	// the reload drops every socket
+#endif
 		raw_irq_handler_t irq_handler = BeforeIOSReload();
 		IOS_IoctlvAsync( fd, 0x25, 0, 0, IOCTL_Buf, NULL, NULL );
 		sleep(1); //wait this time at least
 		AfterIOSReload( irq_handler, v );
 		//Disables MEMPROT for patches
 		write16(MEM_PROT, 0);
+#ifdef NIN_TEST
+		TestNetOpen();
+		gprintf("TEST: IOS58 reloaded\r\n");
+#endif
 	}
 	//else if(*(vu16*)0xCD8005A0 != 0xCAFE)
 	//{
@@ -713,6 +728,10 @@ int main(int argc, char **argv)
 		*(vu32*)0x92FFFFC4 = 0;
 	DCFlushRange((void*)0x92FFFFC0,0x20);
 	fd = IOS_Open( dev_es, 0 );
+#ifdef NIN_TEST
+	gprintf("TEST: starting the kernel\r\n");
+	u64 TestWait = gettime();
+#endif
 	IOS_IoctlvAsync(fd, 0x1F, 0, 0, IOCTL_Buf, NULL, NULL);
 	//Waiting for Nintendont...
 	if(argsboot == false)
@@ -725,12 +744,22 @@ int main(int argc, char **argv)
 			gprintf("Kernel sent signal\n");
 			break;
 		}
+#ifdef NIN_TEST
+		if (ticks_to_secs(gettime() - TestWait) > 30)
+		{
+			gprintf("TEST: the kernel did not answer in 30 s (status %d)\r\n", STATUS_LOADING);
+			ExitToLoader(1);
+		}
+#endif
 	}
 	//Async Ioctlv done by now
 	IOS_Close(fd);
 
 	gprintf("Nintendont at your service!\r\n%s\r\n", NIN_BUILD_STRING);
 	KernelLoaded = 1;
+#ifdef NIN_TEST
+	TestNetOpen();
+#endif
 
 	// Checking for storage devices...
 	if(argsboot == false)
@@ -1207,6 +1236,10 @@ int main(int argc, char **argv)
 		}
 	}
 
+#ifdef NIN_TEST
+	gprintf("TEST: booting the game\r\n");
+	TestNetClose();
+#endif
 	//sync changes
 	CloseDevices();
 

@@ -65,6 +65,52 @@ loop:
 	return;
 }
 
+#ifdef NIN_TEST
+#include "ff_utf8.h"
+#include "exi.h"
+/*
+ * Test builds (make TEST=seconds): every line also goes to sd:/nlog.txt, so a hang that
+ * needs a power cut still leaves the loader's last words. Opened and closed per line:
+ * a file held open across the loader's device shutdown could damage the card.
+ */
+static void TestLog(const char *s)
+{
+	FIL f;
+	UINT done;
+	if (f_open_char(&f, "sd:/nlog.txt", FA_WRITE | FA_OPEN_ALWAYS) != FR_OK)
+		return;	// before the SD is mounted, or after it is closed
+	f_lseek(&f, f_size(&f));
+	f_write(&f, s, strlen(s), &done);
+	f_close(&f);
+}
+
+/*
+ * Test builds also stream every line to the PC that launched the run, through
+ * hbc-reborn's network log (the lab script registers for it with HBC). main.c closes
+ * it before each IOS reload, which drops every socket, and opens it again after.
+ */
+#include "hbc_netlog.h"
+void TestNetOpen(void)
+{
+	s32 r = hbc_netlog_init();
+	gprintf("TEST: network log %s (%d)\r\n", r == 0 ? "open" : "unavailable", r);
+}
+void TestNetClose(void)
+{
+	hbc_netlog_close();
+}
+static void TestNetSend(const char *s, int len)
+{
+	if (len <= 0 || hbc_netlog_lock == LWP_MUTEX_NULL)
+		return;	// nothing to send, or the log was never opened
+	if (len > 4095)
+		len = 4095;
+	LWP_MutexLock(hbc_netlog_lock);
+	hbc_netlog_send(s, len);
+	LWP_MutexUnlock(hbc_netlog_lock);
+}
+#endif
+
 /**
  * Log a debug message.
  * - Wii: Logs to USB Gecko.
@@ -108,17 +154,25 @@ int gprintf( const char *str, ... )
 #endif
 	} else {
 		// We're running on a real Wii, send the results to a USB Gecko
+#ifndef NIN_TEST
 		if (!GeckoFound)
 		{
 			// No USB Gecko found
 			return 0;
 		}
+#endif
 
 		char astr[4096];
 		va_list ap;
 		va_start(ap, str);
 		ret = vsnprintf(astr, sizeof(astr), str, ap);
 		va_end(ap);
+#ifdef NIN_TEST
+		TestLog(astr);
+		TestNetSend(astr, ret);
+		if (!GeckoFound)
+			return ret;
+#endif
 
 		// Send the string.
 		const char *p = astr;

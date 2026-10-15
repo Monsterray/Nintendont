@@ -27,6 +27,10 @@ INCLUDES	:= include
 
 CFLAGS	:= $(INCLUDE) -Os -Wall -s -nostartfiles -nostdlib -mhard-float
 ASFLAGS := $(CFLAGS)
+# Test builds for the bench: make TEST=seconds (see kernel/main.c, NIN_TEST).
+ifneq ($(TEST),)
+CFLAGS += -DNIN_TEST=$(TEST)
+endif
 LDFLAGS := -T $(LDSCRIPT)
 OCFLAGS	:= -S -O binary -j .code
 
