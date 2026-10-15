@@ -31,6 +31,12 @@ Wait:
 	andi.	r10,	r10,	1
 	bne		Wait
 
+.ifdef NIN_TEST
+	lis		r10,	0xD300			# test builds: count Slot B DMAs
+	lwz		r11,	0x3084(r10)
+	addi	r11,	r11,	1
+	stw		r11,	0x3084(r10)
+.endif
 	li		r10,	0
 	stw		r10,	0x4(r8)		# no transfer pending any more
 	cmpwi	r7,	0

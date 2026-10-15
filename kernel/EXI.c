@@ -56,6 +56,9 @@ static u32 IRQ_Cause[4] = {0, 0, 0, 0};
 
 // Slot B pass-through: Slot B is the real slot, not a card image.
 static bool SlotBReal = false;
+#ifdef NIN_TEST
+u32 SlotBInterrupts = 0;	// test builds: printed at exit (main.c)
+#endif
 static void EXIRaise(u32 ch0, u32 ch1, u32 ch2);
 #define EXI1_CSR	0x0D806814	// real EXI channel 1 status, as the Starlet sees it
 
@@ -172,6 +175,9 @@ void EXISlotBUpdate(void)
 		return;
 	write32(EXI1_CSR, (csr & ~0x808) | 2);	// clear EXIINT only (TCINT, EXTINT are write-1-to-clear too)
 	EXIRaise(0, 2, 0);
+#ifdef NIN_TEST
+	SlotBInterrupts++;
+#endif
 }
 
 extern vu32 TRIGame;

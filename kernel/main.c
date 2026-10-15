@@ -306,6 +306,7 @@ int _main( int argc, char *argv[] )
 	write32(TEST_EXIT, 0);
 	write32(0x13003078, 0);	// Slot B pass-through: last DATA word (EXIImm.S)
 	write32(0x1300307C, 0);	// and transfer count
+	write32(0x13003084, 0);	// Slot B DMA count (EXIDMASlotB.S)
 	sync_after_write((void*)TEST_EXIT, 0x20);
 	dbgprintf("TEST: exit after %u s\r\n", NIN_TEST);
 #endif
@@ -512,6 +513,12 @@ int _main( int argc, char *argv[] )
 			sync_before_read((void*)0x13003060, 0x20);
 			dbgprintf("TEST: Slot B pass-through: %u transfers, last word %08X\r\n",
 				  read32(0x1300307C), read32(0x13003078));
+			{
+				extern u32 SlotBInterrupts;
+				sync_before_read((void*)0x13003080, 0x20);
+				dbgprintf("TEST: Slot B: %u interrupts forwarded, %u DMAs\r\n",
+					  SlotBInterrupts, read32(0x13003084));
+			}
 			TestDumpMEM1();
 #endif
 			break;
