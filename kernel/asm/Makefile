@@ -17,6 +17,11 @@ else
 	BIN2H =	../bin2h/bin2h
 endif
 
+# Test builds for the bench: make TEST=seconds (see kernel/main.c, NIN_TEST).
+ifneq ($(TEST),)
+TESTSYM := --defsym NIN_TEST=$(TEST)
+endif
+
 SFILES		:=	$(wildcard *.S)
 DFILES		:=	$(SFILES:.S=.d)
 ELFFILES	:=	$(SFILES:.S=.elf)
@@ -30,7 +35,7 @@ all: $(HFILES)
 
 %.elf: %.S
 	@echo " ASSEMBLE    $<"
-	@$(AS) $< -mregnames -MD $(@:.elf=.d) -o $@
+	@$(AS) $< -mregnames $(TESTSYM) -MD $(@:.elf=.d) -o $@
 
 %.bin: %.elf
 	@echo " STRIP       $<"

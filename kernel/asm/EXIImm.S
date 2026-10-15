@@ -42,9 +42,18 @@ Wait:
 	lwz		r11,	0x6820(r9)
 	andi.	r11,	r11,	1
 	bne		Wait
+	lwz		r10,	0x6824(r9)
+.ifdef NIN_TEST
+	# Test builds: count Slot B transfers and keep the last DATA word,
+	# for the kernel's log at exit (kernel/main.c).
+	lis		r11,	0xD300
+	lwz		r0,	0x307C(r11)
+	addi	r0,	r0,	1
+	stw		r0,	0x307C(r11)
+	stw		r10,	0x3078(r11)
+.endif
 	cmpwi	r6,	1			# a write returns nothing
 	beq		end
-	lwz		r10,	0x6824(r9)
 	stswx	r10,	0,	r4
 	b		end
 
