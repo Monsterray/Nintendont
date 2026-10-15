@@ -6,6 +6,7 @@
 #include "asm/EXIImm.h"
 #include "asm/EXISelect.h"
 #include "asm/EXILock.h"
+#include "asm/EXIDeselect.h"
 #include "asm/EXIDMA.h"
 #include "asm/EXIProbe.h"
 #include "asm/EXIGetID.h"
