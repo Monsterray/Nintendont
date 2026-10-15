@@ -398,6 +398,7 @@ int _main( int argc, char *argv[] )
 	while (1)
 	{
 		_ahbMemFlush(0);
+		EXISlotBUpdate();	// twice a pass: the mic leaves 1.45 ms per buffer
 #ifdef NIN_TEST
 		if (TimerDiffSeconds(TestTimer) >= NIN_TEST && read32(TEST_EXIT) == 0)
 		{
