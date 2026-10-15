@@ -17,7 +17,7 @@ EXIDeselect:
 	lwz		r4,	NinCfgConfig@l(r4)
 	andis.	r4,	r4,	NIN_CFG_MC_SLOTB@h
 	bne		Done
-	lis		r4,	0xCC00
+	lis		r4,	0xCD80			# EXI channel 1 at 0xCD806814, as Patch.c maps EXI
 	lwz		r5,	0x6814(r4)		# channel 1 CSR
 	andi.	r5,	r5,	0x405
 	stw		r5,	0x6814(r4)
