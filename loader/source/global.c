@@ -488,7 +488,7 @@ void UpdateNinCFG()
 		}
 
 		// v12: New flags, disabled by default.
-		ncfg->Config &= ~(NIN_CFG_MC_SLOTB_EMU | NIN_CFG_SHOW_ADVANCED);
+		ncfg->Config &= ~(NIN_CFG_MC_SLOTB_EMU | NIN_CFG_SHOW_ADVANCED | NIN_CFG_LARGE_CACHE);
 		ncfg->Version = 12;
 	}
 	if (ncfg->Version == 12)
