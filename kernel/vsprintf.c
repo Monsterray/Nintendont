@@ -28,6 +28,8 @@ static char LogQueue[0x1000];
 static u32 LogQueued = 0;
 static bool LogHeaderDone = false;
 static u32 LogDropped = 0;
+static u32 LogSyncTimer = 0;
+static bool LogHeld = false;
 extern char __di_stack_addr, __di_stack_size;
 
 static bool InDIThread(void)
@@ -57,7 +59,16 @@ static void LogWrite(const char *s, u32 len)
 			LogHeaderDone = true;
 		}
 	}
-	if (f_write(&dbgfile, s, len, &done) != FR_OK || f_sync(&dbgfile) != FR_OK)
+	FRESULT res = f_write(&dbgfile, s, len, &done);
+	// Each f_sync writes the data sector and the directory entry: do it at most
+	// once a second, so the main loop is not held up for every line. A hard
+	// hang can lose the last second of the log.
+	if (res == FR_OK && TimerDiffSeconds(LogSyncTimer) >= 1)
+	{
+		res = f_sync(&dbgfile);
+		LogSyncTimer = read32(HW_TIMER);
+	}
+	if (res != FR_OK)
 	{
 		// After one failed call FatFs refuses every later one on this file
 		// object: close it, and the next line opens the log again.
@@ -72,7 +83,7 @@ static void LogWrite(const char *s, u32 len)
  */
 void LogFlush(void)
 {
-	if (LogQueued == 0 || DIReadPending())
+	if (LogQueued == 0 || LogHeld || DIReadPending())
 		return;
 	LogWrite(LogQueue, LogQueued);
 	LogQueued = 0;
@@ -406,8 +417,19 @@ int dbgprintf( const char *fmt, ...)
 
 	return 0;
 }
+/**
+ * Hold the log's file writes, queueing lines meanwhile, while something with a
+ * tight deadline runs in the main loop (Slot B pass-through: a microphone buffer
+ * every 1.45 ms). Lines that do not fit in the queue are dropped and counted.
+ */
+void LogHold(bool hold)
+{
+	LogHeld = hold;
+}
+
 void closeLog(void)
 {
+	LogHeld = false;
 	DIFinishAsync();
 	LogFlush();
 	if(file_opened == FR_OK)

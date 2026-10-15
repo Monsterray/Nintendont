@@ -10,4 +10,5 @@ int _sprintf( char *buf, const char *fmt, ... );
 void CheckOSReport(void);
 void closeLog(void);
 void LogFlush(void);
+void LogHold(bool hold);
 #endif
