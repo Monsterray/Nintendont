@@ -1009,11 +1009,11 @@ static const char *const *GetSettingsDescription(const MenuCtx *ctx)
 					"Wii systems.",
 					"",
 					"NOTE: Enabling Native Control",
-					"will disable Bluetooth and",
-					"USB HID controllers.",
+					"will disable Bluetooth, HID,",
+					"and Wii U GamePad controllers.",
 					"",
-					"This option is not available",
-					"on Wii U.",
+					"On Wii U, test point TP69 can",
+					"be used for one GCN controller.",
 					NULL
 				};
 				return desc_native_si;
@@ -1550,7 +1550,7 @@ static bool UpdateSettingsMenu(MenuCtx *ctx)
 
 		// Native controllers. (Required for GBA link; disables Bluetooth and USB HID.)
 		// TODO: Gray out on RVL-101?
-		PrintFormat(MENU_SIZE, (IsWiiU() ? DARK_GRAY : BLACK), MENU_POS_X + 50, SettingY(ListLoopIndex),
+		PrintFormat(MENU_SIZE, BLACK, MENU_POS_X + 50, SettingY(ListLoopIndex),
 			    "%-18s:%-4s", OptionStrings[ListLoopIndex],
 			    (ncfg->Config & (NIN_CFG_NATIVE_SI)) ? "On " : "Off");
 		ListLoopIndex++;
@@ -1632,8 +1632,7 @@ static bool UpdateSettingsMenu(MenuCtx *ctx)
 		// Draw the cursor.
 		u32 cursor_color = BLACK;
 		if (ctx->settings.settingPart == 0) {
-			if ((!IsWiiU() && ctx->settings.posX == NIN_CFG_BIT_USB) ||
-			     (IsWiiU() && ctx->settings.posX == NIN_CFG_NATIVE_SI))
+			if ((!IsWiiU() && ctx->settings.posX == NIN_CFG_BIT_USB))
 			{
 				// Setting is not usable on this platform.
 				// Gray out the cursor, too.
