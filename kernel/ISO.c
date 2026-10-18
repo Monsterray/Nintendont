@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "wdvd.h"
 
 #include "ff_utf8.h"
+#include "../common/include/ZSO.h"
 
 extern u32 TRIGame;
 extern u32 DiscRequested;
@@ -78,9 +79,87 @@ typedef struct _CISO_t {
 static uint16_t ciso_block_map[CISO_MAP_SIZE];
 static bool ISO_IsCISO = false;	// Set to 1 for CISO mode.
 
+// ZSO: LZ4-compressed blocks. Buffers exist only while a ZSO is open.
+#define ZSO_INDEX_CACHE	256
+static bool ISO_IsZSO = false;
+static u32 ZSOBlockSize, ZSOBlockBits, ZSOBlocks, ZSOShift;
+static u64 ZSOTotal;
+static u8 *ZSOComp, *ZSOData, *ZSOIndex;
+static u32 ZSODataBlock, ZSOIndexFirst;
+
+/* Read raw file bytes, without CISO/ZSO mapping. */
+static u32 ISORawRead(void *Buffer, u32 Length, u64 Offset64)
+{
+	UINT read;
+	if(wiiVCInternal)
+	{
+		WDVD_FST_LSeek( Offset64 );
+		sync_before_read( Buffer, Length );
+		read = WDVD_FST_Read( Buffer, Length );
+	}
+	else
+	{
+		f_lseek( &GameFile, Offset64 );
+		f_read( &GameFile, Buffer, Length, &read );
+	}
+	return read;
+}
+
+/* Index entry for a block. Entries blk and blk+1 are always cached together. */
+static bool ZSOEntry(u32 blk, u32 *entry, u32 *next)
+{
+	if (ZSOIndexFirst == ~0U || blk < ZSOIndexFirst || blk + 1 >= ZSOIndexFirst + ZSO_INDEX_CACHE)
+	{
+		u32 count = ZSOBlocks + 1 - blk;
+		if (count > ZSO_INDEX_CACHE)
+			count = ZSO_INDEX_CACHE;
+		if (ISORawRead(ZSOIndex, count * 4, ZSO_HEADER_SIZE + (u64)blk * 4) != count * 4)
+			return false;
+		ZSOIndexFirst = blk;
+	}
+	*entry = ZSO_le32(ZSOIndex + (blk - ZSOIndexFirst) * 4);
+	*next = ZSO_le32(ZSOIndex + (blk + 1 - ZSOIndexFirst) * 4);
+	return true;
+}
+
+/* Decode one block into ZSOData. */
+static bool ZSOLoadBlock(u32 blk)
+{
+	if (blk == ZSODataBlock)
+		return true;
+	u32 entry, next;
+	if (blk >= ZSOBlocks || !ZSOEntry(blk, &entry, &next))
+		return false;
+	u64 pos = (u64)(entry & ~ZSO_PLAIN) << ZSOShift;
+	u64 end = (u64)(next & ~ZSO_PLAIN) << ZSOShift;
+	u32 want = ZSOBlockSize;
+	if (ZSOTotal - ((u64)blk << ZSOBlockBits) < want)
+		want = (u32)(ZSOTotal - ((u64)blk << ZSOBlockBits));
+	ZSODataBlock = ~0U;
+	if (entry & ZSO_PLAIN)
+	{
+		if (ISORawRead(ZSOData, want, pos) != want)
+			return false;
+	}
+	else
+	{
+		if (end <= pos)
+			return false;
+		u32 csize = (end - pos > ZSOBlockSize) ? ZSOBlockSize : (u32)(end - pos);
+		if (ISORawRead(ZSOComp, csize, pos) != csize ||
+		    ZSO_LZ4Decode(ZSOComp, csize, ZSOData, want) != (int)want)
+		{
+			dbgprintf("ISO:ZSO block %u is corrupt\r\n", blk);
+			return false;
+		}
+	}
+	ZSODataBlock = blk;
+	return true;
+}
+
 /**
  * Read directly from the ISO file.
- * CISO mapping is done here.
+ * CISO mapping and ZSO decompression are done here.
  * @param Buffer Output buffer.
  * @param Length Data length.
  * @param Offset ISO file offset. (Must have ISOShift64 added!)
@@ -91,7 +170,26 @@ static inline void ISOReadDirect(void *Buffer, u32 Length, u64 Offset64)
 		return;
 
 	UINT read;
-	if (!ISO_IsCISO)
+	if (ISO_IsZSO)
+	{
+		u8 *ptr8 = (u8*)Buffer;
+		u64 End64 = Offset64 + Length;
+		while (Offset64 < End64)
+		{
+			u32 blk = (u32)(Offset64 >> ZSOBlockBits);
+			u32 in = (u32)Offset64 & (ZSOBlockSize - 1);
+			u32 n = ZSOBlockSize - in;
+			if (n > End64 - Offset64)
+				n = (u32)(End64 - Offset64);
+			if (!ZSOLoadBlock(blk))
+				return;
+			memcpy(ptr8, ZSOData + in, n);
+			ptr8 += n;
+			Offset64 += n;
+		}
+		Length = 0;
+	}
+	else if (!ISO_IsCISO)
 	{
 		// Standard ISO/GCM file.
 		if(LastOffset64 != Offset64)
@@ -299,11 +397,29 @@ bool ISOInit()
 	ISOFileOpen = 1;
 	LastOffset64 = ~0ULL;
 	ISO_IsCISO = false;
+	ISO_IsZSO = false;
 
 	/* Check for CISO format. */
 	CISO_t *tmp_ciso = (CISO_t*)malloca(0x8000, 0x20);
 	ISOReadDirect(tmp_ciso, 0x8000, 0);
-	if (tmp_ciso->magic == CISO_MAGIC)
+	const u8 *hdr = (const u8*)tmp_ciso;
+	u32 zso_bs = ZSO_BlockSize(hdr);
+	if (zso_bs)
+	{
+		ZSOBlockSize = zso_bs;
+		ZSOBlockBits = 31 - __builtin_clz(zso_bs);
+		ZSOTotal = ZSO_le32(hdr + 8) | ((u64)ZSO_le32(hdr + 12) << 32);
+		ZSOBlocks = (u32)((ZSOTotal + zso_bs - 1) >> ZSOBlockBits);
+		ZSOShift = hdr[0x15];
+		ZSOComp = (u8*)malloca(zso_bs, 0x20);
+		ZSOData = (u8*)malloca(zso_bs, 0x20);
+		ZSOIndex = (u8*)malloca(ZSO_INDEX_CACHE * 4, 0x20);
+		ZSODataBlock = ~0U;
+		ZSOIndexFirst = ~0U;
+		ISO_IsZSO = true;
+		dbgprintf("ISO:ZSO, %u blocks of %u bytes\r\n", ZSOBlocks, zso_bs);
+	}
+	else if (tmp_ciso->magic == CISO_MAGIC)
 	{
 		// Only CISOs with 2 MB block sizes are supported.
 		u32 block_size = ((tmp_ciso->block_size >> 24) & 0x000000FF) |
@@ -385,6 +501,14 @@ void ISOClose()
 	}
 	ISOFileOpen = 0;
 	ISO_IsCISO = false;
+	if (ISO_IsZSO)
+	{
+		free(ZSOComp);
+		free(ZSOData);
+		free(ZSOIndex);
+		ZSOComp = ZSOData = ZSOIndex = NULL;
+		ISO_IsZSO = false;
+	}
 }
 
 void ISOSetupCache()
@@ -428,7 +552,7 @@ void ISOSeek(u32 Offset)
 		return;
 
 	const u64 Offset64 = (u64)Offset + ISOShift64;
-	if(LastOffset64 != Offset64)
+	if(LastOffset64 != Offset64 && !ISO_IsZSO)
 	{
 		if (ISO_IsCISO)
 		{

@@ -272,6 +272,23 @@ static u32 CheckForMultiGameAndRegion(unsigned int CurDICMD, u32 *ISOShift, u32 
 			return 2;
 		}
 
+		if (!wiiVCInternal && ZSO_BlockSize(MultiHdr))
+		{
+			// ZSO+MultiGame is not supported. Read the region
+			// code from the decompressed start of the image.
+			u8 zso_start[0x460];
+			int ret = 0;
+			if (ISOShift)
+				*ISOShift = 0;
+			if (!ZSOReadStart(&f, zso_start, sizeof(zso_start)))
+				ret = 3;
+			else if (BI2region)
+				memcpy(BI2region, &zso_start[0x458], sizeof(*BI2region));
+			f_close(&f);
+			free(MultiHdr);
+			return ret;
+		}
+
 		// Check for CISO magic with 2 MB block size.
 		// NOTE: CISO block size is little-endian.
 		static const uint8_t CISO_MAGIC[8] = {'C','I','S','O',0x00,0x00,0x20,0x00};
@@ -982,7 +999,7 @@ int main(int argc, char **argv)
 				PrintFormat(DEFAULT_SIZE, MAROON, MENU_POS_X, MENU_POS_Y + 20*5, "Unable to read the disc header.");
 				break;
 			case 3:
-				PrintFormat(DEFAULT_SIZE, MAROON, MENU_POS_X, MENU_POS_Y + 20*5, "Unable to read the CISO bi2.bin area.");
+				PrintFormat(DEFAULT_SIZE, MAROON, MENU_POS_X, MENU_POS_Y + 20*5, "Unable to read the CISO/ZSO bi2.bin area.");
 				break;
 			case 4:
 				PrintFormat(DEFAULT_SIZE, MAROON, MENU_POS_X, MENU_POS_Y + 20*5, "Unable to open the extracted FST bi2.bin file.");

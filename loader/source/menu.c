@@ -67,7 +67,7 @@ const u32 DiscFormatColors[8] =
 	0x001A55FF,	// CISO
 	0x551A55FF,	// Multi-Game
 	0x55551AFF,	// Oversized (dark yellow)
-	GRAY,		// undefined
+	0x1A5555FF,	// ZSO (dark teal)
 	GRAY,		// undefined
 };
 
@@ -163,7 +163,20 @@ static bool IsDiscImageValid(const char *filename, int discNumber, gameinfo *gi)
 	// Check for CISO magic with 2 MB block size.
 	// NOTE: CISO block size is little-endian.
 	static const uint8_t CISO_MAGIC[8] = {'C','I','S','O',0x00,0x00,0x20,0x00};
-	if (!memcmp(buf, CISO_MAGIC, sizeof(CISO_MAGIC)) &&
+	u8 zso_start[0x460];	// header and BI2 region code
+	const bool is_zso = ZSO_BlockSize(buf) != 0;
+	if (is_zso)
+	{
+		// ZSO: read the decompressed disc header.
+		if (!ZSOReadStart(&in, zso_start, sizeof(zso_start)))
+		{
+			f_close(&in);
+			return false;
+		}
+		memcpy(buf, zso_start, sizeof(buf));
+		gi->Flags = GIFLAG_FORMAT_ZSO;
+	}
+	else if (!memcmp(buf, CISO_MAGIC, sizeof(CISO_MAGIC)) &&
 	    !IsGCGame(buf))
 	{
 		// CISO magic is present, and GCN magic isn't.
@@ -209,8 +222,16 @@ static bool IsDiscImageValid(const char *filename, int discNumber, gameinfo *gi)
 	{
 		// Read the BI2 region code.
 		u32 BI2region;
-		f_lseek(&in, BI2region_addr);
-		f_read(&in, &BI2region, sizeof(BI2region), &read);
+		if (is_zso)
+		{
+			memcpy(&BI2region, &zso_start[0x458], sizeof(BI2region));
+			read = sizeof(BI2region);
+		}
+		else
+		{
+			f_lseek(&in, BI2region_addr);
+			f_read(&in, &BI2region, sizeof(BI2region), &read);
+		}
 		if (read != sizeof(BI2region)) {
 			// Error reading from the file.
 			f_close(&in);
@@ -232,9 +253,10 @@ static bool IsDiscImageValid(const char *filename, int discNumber, gameinfo *gi)
 		const bool is_multigame = IsMultiGameDisc((const char*)buf);
 		if (is_multigame)
 		{
-			if (gi->Flags == GIFLAG_FORMAT_CISO)
+			if ((gi->Flags & GIFLAG_FORMAT_MASK) == GIFLAG_FORMAT_CISO ||
+			    (gi->Flags & GIFLAG_FORMAT_MASK) == GIFLAG_FORMAT_ZSO)
 			{
-				// Multi-game + CISO is NOT supported.
+				// Multi-game + CISO/ZSO is NOT supported.
 				ret = false;
 			}
 			else
@@ -410,15 +432,15 @@ static DevState LoadGameList(gameinfo *gi, u32 sz, u32 *pGameCount)
 			//Test if game.iso exists and add to list
 			bool found = false;
 
-			static const char disc_filenames[8][16] = {
-				"game.ciso", "game.cso", "game.gcm", "game.iso",
-				"disc2.ciso", "disc2.cso", "disc2.gcm", "disc2.iso"
+			static const char disc_filenames[10][16] = {
+				"game.ciso", "game.cso", "game.gcm", "game.iso", "game.zso",
+				"disc2.ciso", "disc2.cso", "disc2.gcm", "disc2.iso", "disc2.zso"
 			};
 
 			u32 i;
-			for (i = 0; i < 8; i++)
+			for (i = 0; i < 10; i++)
 			{
-				const u32 discNumber = i / 4;
+				const u32 discNumber = i / 5;
 
 				// Append the disc filename.
 				strcpy(&filename[fnlen], disc_filenames[i]);
@@ -741,6 +763,7 @@ static bool UpdateGameSelectMenu(MenuCtx *ctx)
 		PrintFormat(DEFAULT_SIZE, DiscFormatColors[3], MENU_POS_X+(25*10), MENU_POS_Y + 20*3, "CISO");
 		PrintFormat(DEFAULT_SIZE, DiscFormatColors[4], MENU_POS_X+(30*10), MENU_POS_Y + 20*3, "Multi");
 		PrintFormat(DEFAULT_SIZE, DiscFormatColors[5], MENU_POS_X+(36*10), MENU_POS_Y + 20*3, "Over");
+		PrintFormat(DEFAULT_SIZE, DiscFormatColors[6], MENU_POS_X+(41*10), MENU_POS_Y + 20*3, "ZSO");
 
 		// Starting position.
 		int gamelist_y = MENU_POS_Y + 20*5 + 10;

@@ -178,7 +178,7 @@ static void DrawGameInfoScreen(const gameinfo *gi, const MD5VerifyState_t *md5)
 		"Compressed ISO (Hermes uLoader format)",
 		"Multi-Game Disc",
 		"Oversized",
-		"Unknown (6)",
+		"Compressed ZSO (LZ4)",
 		"Unknown (7)",
 	};
 	const u8 disc_format = (gi->Flags & GIFLAG_FORMAT_MASK);
