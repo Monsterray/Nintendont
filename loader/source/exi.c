@@ -155,6 +155,14 @@ int gprintf( const char *str, ... )
 			// No USB Gecko found
 			return 0;
 		}
+#else
+		// Test builds also log to SD and the network, but not with interrupts
+		// off (game launch): those wait on IOS, and with libogc 3 even
+		// vsnprintf's locks hang once the exception vectors are gone.
+		u32 msr;
+		asm volatile("mfmsr %0" : "=r"(msr));
+		if (!(msr & 0x8000) && !GeckoFound)
+			return 0;
 #endif
 
 		char astr[4096];
