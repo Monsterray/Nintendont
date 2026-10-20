@@ -686,6 +686,43 @@ void FlushDevices(void)
 	disk_flush(DEV_USB);
 }
 
+bool ZSOReadStart(FIL *f, u8 *out, u32 len)
+{
+	u8 hdr[ZSO_HEADER_SIZE + 8];	// header and the first two index entries
+	UINT read;
+	if (f_lseek(f, 0) != FR_OK || f_read(f, hdr, sizeof(hdr), &read) != FR_OK || read != sizeof(hdr))
+		return false;
+	const u32 bs = ZSO_BlockSize(hdr);
+	if (!bs || len > bs)
+		return false;
+	const u64 total = ZSO_le32(hdr + 8) | ((u64)ZSO_le32(hdr + 12) << 32);
+	const u32 want = (total < bs) ? (u32)total : bs;
+	const u32 e0 = ZSO_le32(hdr + ZSO_HEADER_SIZE), e1 = ZSO_le32(hdr + ZSO_HEADER_SIZE + 4);
+	const u64 pos = (u64)(e0 & ~ZSO_PLAIN) << hdr[0x15];
+	const u64 end = (u64)(e1 & ~ZSO_PLAIN) << hdr[0x15];
+	if (len > want || end <= pos)
+		return false;
+
+	u8 *c = malloc(bs), *d = malloc(bs);
+	bool ok = false;
+	if (c && d && f_lseek(f, pos) == FR_OK)
+	{
+		if (e0 & ZSO_PLAIN)
+			ok = f_read(f, d, want, &read) == FR_OK && read == want;
+		else
+		{
+			const u32 csize = (end - pos > bs) ? bs : (u32)(end - pos);
+			ok = f_read(f, c, csize, &read) == FR_OK && read == csize &&
+			     ZSO_LZ4Decode(c, csize, d, want) == (int)want;
+		}
+	}
+	if (ok)
+		memcpy(out, d, len);
+	free(c);
+	free(d);
+	return ok;
+}
+
 /**
  * Does a filename have a supported file extension?
  * @return True if it does; false if it doesn't.
@@ -698,7 +735,8 @@ bool IsSupportedFileExt(const char *filename)
 		const int extpos = len-3;
 		if (!strcasecmp(&filename[extpos], "gcm") ||
 		    !strcasecmp(&filename[extpos], "iso") ||
-		    !strcasecmp(&filename[extpos], "cso"))
+		    !strcasecmp(&filename[extpos], "cso") ||
+		    !strcasecmp(&filename[extpos], "zso"))
 		{
 			// File extension is supported.
 			return true;
