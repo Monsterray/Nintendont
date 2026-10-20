@@ -457,7 +457,8 @@ static const char *const desc_native_si[] = {
 	"The game uses the GameCube controller ports directly.",
 	"Use this for GBA link cables on an original Wii.",
 	"",
-	"NOTE: Bluetooth and USB HID controllers do not operate when this is On.",
+	"NOTE: Bluetooth, USB HID and Wii U GamePad controllers do not operate when this is On.",
+	"On Wii U, test point TP69 can connect one GameCube controller.",
 	NULL
 };
 static const char *const desc_max_pads[] = {
@@ -604,7 +605,7 @@ static const SettingDef Settings[] =
 
 	/** Input **/
 	{ .name = "Native Control", .category = CAT_INPUT, .kind = KIND_BOOL, .store = STORE_CONFIG,
-	  .flags = SF_WII_ONLY, .mask = NIN_CFG_NATIVE_SI, .desc = desc_native_si },
+	  .mask = NIN_CFG_NATIVE_SI, .desc = desc_native_si },	// also Wii U: TP69 GameCube port
 	{ .name = "Max Pads", .category = CAT_INPUT, .kind = KIND_INT, .store = STORE_CUSTOM,
 	  .flags = SF_WII_ONLY, .get = Get_MaxPads, .set = Set_MaxPads, .min = 0, .max = NIN_CFG_MAXPAD,
 	  .format = Fmt_Plain, .desc = desc_max_pads },
