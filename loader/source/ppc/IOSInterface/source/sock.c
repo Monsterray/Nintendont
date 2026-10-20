@@ -879,9 +879,7 @@ static threadCBDatStr threadReqDat[T_MAX][SO_TOTAL_FDS];
 static myCtx threadCtx[T_MAX];
 
 //new thread stuff
-static int dbgSock = -1;
 static volatile u8 threadInUse[T_MAX][SO_TOTAL_FDS];
-static threadCBDatStr threadRequest[T_MAX][SO_TOTAL_FDS];
 
 int lockThread(u32 num)
 {
@@ -914,6 +912,7 @@ void unlockThread(u32 num)
 
 void test_debug(char *txt, int cnt, int p1, int p2, int p3){
 #if 0
+	static int dbgSock = -1;
 	if (dbgSock == -1){
 		dbgSock = SOSocket(2,1,0);
 

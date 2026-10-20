@@ -506,7 +506,6 @@ u32 PADRead(u32 calledByGame)
 				if (cur) {
 					// Find what changed
 					u8 added   = cur & ~prev;   // new buttons pressed
-					u8 removed = prev & ~cur; // buttons released
 
 					if (added) {
 						// --- Single button presses ---
