@@ -6,9 +6,10 @@
 
 #include "global.h"
 
-// Uncomment this to enable Slot B support.
-// NOTE: Slot B is currently broken, and will
-// show up as "damaged" or "unusable".
+// Compile-time Slot B support. At runtime Slot B is only
+// loaded when NIN_CFG_MC_SLOTB_EMU is set (Settings -> Memory Card).
+// NOTE: Slot B has historically been reported as showing up
+// "damaged" or "unusable" in some games; treat it as experimental.
 #define GCNCARD_ENABLE_SLOT_B 1
 
 /**

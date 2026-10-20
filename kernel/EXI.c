@@ -140,8 +140,8 @@ void EXIInit(void)
 		// Load Slot A.
 		GCNCard_Load(0);
 
-		// Load Slot B.
-		if (TRIGame == 0)
+		// Load Slot B. (user option; never on Triforce)
+		if (TRIGame == 0 && ConfigGetConfig(NIN_CFG_MC_SLOTB_EMU))
 			GCNCard_Load(1);
 	}
 }
