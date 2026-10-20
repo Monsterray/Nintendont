@@ -1,0 +1,42 @@
+name: Build
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Only devkitPro's host tools (elf2dol, bin2s) come from this image.
+    # The compilers and libogc are the pinned versions from
+    # scripts/setup-toolchain.sh; see BUILDING.md for why.
+    container: devkitpro/devkitppc:latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Host packages
+        run: apt-get update && apt-get install -y --no-install-recommends zip xz-utils curl ca-certificates
+
+      - name: Cache pinned toolchain
+        uses: actions/cache@v6
+        with:
+          path: |
+            /opt/devkitpro/devkitARM-r53-1
+            /opt/devkitpro/devkitPPC-r35-1
+            /opt/devkitpro/libogc-1.8.23
+          key: toolchain-${{ hashFiles('scripts/setup-toolchain.sh') }}
+
+      - name: Toolchain
+        run: scripts/setup-toolchain.sh
+
+      - name: Build
+        run: scripts/build.sh
+
+      - name: Package
+        run: |
+          mkdir -p out/apps/Nintendont
+          cp loader/loader.dol out/apps/Nintendont/boot.dol
+          cp nintendont/meta.xml nintendont/icon.png out/apps/Nintendont/
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Nintendont-${{ github.sha }}
+          path: out
