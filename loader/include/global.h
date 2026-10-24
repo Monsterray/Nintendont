@@ -203,6 +203,17 @@ void FlushDevices(void);
 bool IsSupportedFileExt(const char *filename);
 
 /**
+ * Read the decompressed start of a ZSO disc image.
+ * @param f Open ZSO file.
+ * @param out Output buffer.
+ * @param len Bytes to read. (at most ZSO_BLOCK_MIN)
+ * @return True on success.
+ */
+#include "ff.h"
+#include "../../common/include/ZSO.h"
+bool ZSOReadStart(FIL *f, u8 *out, u32 len);
+
+/**
  * Check if an ID6 is a known multi-game disc.
  * @param id6 ID6. (must be 6 bytes)
  * @return True if this is a known multi-game disc; false if not.

@@ -7,6 +7,7 @@ A Wii Homebrew Project to play GC Games on Wii and vWii on Wii U
 * Loads 1:1 and shrunken .GCM/.ISO disc images.
 * Loads games as extracted files (FST format)
 * Loads CISO-format disc images. (uLoader CISO format)
+* Loads ZSO-format (LZ4-compressed) disc images, e.g. made with `maxcso --format=zso`.
 * Memory card emulation
 * Play audio via disc audio streaming
 * Bluetooth controller support (Classic Controller (Pro), Wii U Pro Controller)
@@ -72,7 +73,7 @@ save or distribute game code.
 
 ### Quick Installation:
 1. Get the [loader.dol](loader/loader.dol?raw=true), rename it to boot.dol and put it in /apps/Nintendont/ along with the files [meta.xml](nintendont/meta.xml?raw=true) and [icon.png](nintendont/icon.png?raw=true).
-2. Copy your GameCube games to the /games/ directory. Subdirectories are optional for 1-disc games in ISO/GCM and CISO format.
+2. Copy your GameCube games to the /games/ directory. Subdirectories are optional for 1-disc games in ISO/GCM, CISO and ZSO format.
    * For 2-disc games, you should create a subdirectory /games/MYGAME/ (where MYGAME can be anything), then name disc 1 as "game.iso" and disc 2 as "disc2.iso".
    * For extracted FST, the FST must be located in a subdirectory, e.g. /games/FSTgame/sys/boot.bin .
 3. Connect your storage device to your Wii or Wii U and start The Homebrew Channel.
