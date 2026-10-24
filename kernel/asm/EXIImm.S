@@ -18,6 +18,37 @@ EXIImm:
 	stwu	%sp,	-0x40(%sp)
 
 	mr		r8,	r7
+	mr		r12,	r3		# channel, for the callback
+
+	# Slot B (channel 1) not emulated: the real device, e.g. the GameCube
+	# Microphone. Do the transfer on the hardware and wait for it, as the
+	# emulated path does; EXISync is a no-op.
+	cmpwi	r3,	1
+	bne		Emulated
+	lis		r9,	NinCfgConfig@h
+	lwz		r9,	NinCfgConfig@l(r9)
+	andis.	r9,	r9,	NIN_CFG_MC_SLOTB@h
+	bne		Emulated
+	lis		r9,	0xCD80			# EXI channel 1 at 0xCD806814, as Patch.c maps EXI
+	mtxer	r5
+	lswx	r10,	0,	r4		# 1-4 bytes, left-aligned
+	stw		r10,	0x6824(r9)		# DATA
+	addi	r11,	r5,	-1
+	slwi	r11,	r11,	4		# TLEN
+	rlwimi	r11,	r6,	2,	28,	29	# RW
+	ori		r11,	r11,	1		# TSTART
+	stw		r11,	0x6820(r9)		# CR
+Wait:
+	lwz		r11,	0x6820(r9)
+	andi.	r11,	r11,	1
+	bne		Wait
+	cmpwi	r6,	1			# a write returns nothing
+	beq		end
+	lwz		r10,	0x6824(r9)
+	stswx	r10,	0,	r4
+	b		end
+
+Emulated:
 
 	lis		r7,	0xD302
 
@@ -76,7 +107,7 @@ end:
 	beq		NoCB
 
 	mtctr	r8
-	li		r3,	0
+	mr		r3,	r12		# the channel (was always 0)
 	li		r4,	0
 	bctrl
 

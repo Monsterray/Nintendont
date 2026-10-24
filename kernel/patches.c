@@ -406,12 +406,12 @@ static FuncPattern EXIFPatterns[] =
 	{  0x13C,   20,    4,    6,   11,    6,	EXISelect,			EXISelect_size,				"EXISelect",			"PKM",		FGROUP_EXISelect,			0 },
 	{  0x1CC,   33,    3,   10,   17,    6,	EXISelect,			EXISelect_size,				"EXISelect",			"DBG",		FGROUP_EXISelect,			0 },
 
-	{  0x10C,   20,    8,    6,   12,    4,	EXILock,			EXILock_size,				"EXIDeselect",			"A",		FGROUP_EXIDeselect,			0 },
-	{  0x10C,   20,    8,    6,   12,    3,	EXILock,			EXILock_size,				"EXIDeselect",			"B",		FGROUP_EXIDeselect,			0 },
-	{  0x10C,   20,    8,    6,   11,    3,	EXILock,			EXILock_size,				"EXIDeselect",			"IPL",		FGROUP_EXIDeselect,			0 },
-	{  0x104,   17,    3,    6,   12,    4,	EXILock,			EXILock_size,				"EXIDeselect",			"PKM",		FGROUP_EXIDeselect,			0 },
-	{  0x130,   22,    3,    7,   14,    5,	EXILock,			EXILock_size,				"EXIDeselect",			"DBG A",	FGROUP_EXIDeselect,			0 },
-	{  0x12C,   21,    3,    7,   14,    5,	EXILock,			EXILock_size,				"EXIDeselect",			"DBG B",	FGROUP_EXIDeselect,			0 },
+	{  0x10C,   20,    8,    6,   12,    4,	EXIDeselect,		EXIDeselect_size,				"EXIDeselect",			"A",		FGROUP_EXIDeselect,			0 },
+	{  0x10C,   20,    8,    6,   12,    3,	EXIDeselect,		EXIDeselect_size,				"EXIDeselect",			"B",		FGROUP_EXIDeselect,			0 },
+	{  0x10C,   20,    8,    6,   11,    3,	EXIDeselect,		EXIDeselect_size,				"EXIDeselect",			"IPL",		FGROUP_EXIDeselect,			0 },
+	{  0x104,   17,    3,    6,   12,    4,	EXIDeselect,		EXIDeselect_size,				"EXIDeselect",			"PKM",		FGROUP_EXIDeselect,			0 },
+	{  0x130,   22,    3,    7,   14,    5,	EXIDeselect,		EXIDeselect_size,				"EXIDeselect",			"DBG A",	FGROUP_EXIDeselect,			0 },
+	{  0x12C,   21,    3,    7,   14,    5,	EXIDeselect,		EXIDeselect_size,				"EXIDeselect",			"DBG B",	FGROUP_EXIDeselect,			0 },
 
 	{   0x7C,   10,    3,    0,    1,    7,	NULL,				FCODE_EXIIntrruptHandler,	"EXIntrruptHandler",	"A",		FGROUP_EXIntrruptHandler,	0 },
 	{   0xC4,   19,    6,    4,    1,    7,	NULL,				FCODE_EXIIntrruptHandler,	"EXIntrruptHandler",	"B",		FGROUP_EXIntrruptHandler,	0 },

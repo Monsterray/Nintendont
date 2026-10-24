@@ -54,6 +54,11 @@ static u8 EXICommand[4] = {0, 0, 0, 0};
 // idx 3 is provided to prevent overflows.
 static u32 IRQ_Cause[4] = {0, 0, 0, 0};
 
+// Slot B pass-through: Slot B is the real slot, not a card image.
+static bool SlotBReal = false;
+static void EXIRaise(u32 ch0, u32 ch1, u32 ch2);
+#define EXI1_CSR	0x0D806814	// real EXI channel 1 status, as the Starlet sees it
+
 static u32 SRAMWriteCount = 0;
 static u8 *const FontBuf = (u8*)(0x13100000);
 static u32 IPLReadOffset;
@@ -151,6 +156,44 @@ void EXIInit(void)
 		else if (TRIGame == 0 && ConfigGetConfig(NIN_CFG_MC_SLOTB_EMU))
 			GCNCard_Load(1);
 	}
+
+	// Slot B without a card image is the real slot (kernel/asm/EXI*.S).
+	// Hybrid EXI gives the game's own routines and interrupts for Slot B
+	// to the hardware, so the pass-through stays out of its way.
+	SlotBReal = ConfigGetConfig(NIN_CFG_MEMCARDEMU) && TRIGame == 0 &&
+		!ConfigGetConfig(NIN_CFG_MC_SLOTB) && !EXIHybridEnabled();
+}
+
+/**
+ * Slot B pass-through: the game drives the real device in Slot B, e.g. the
+ * GameCube Microphone, but that device's EXI interrupt ("buffer full" on the
+ * mic) lands in the real channel 1 status register, which the game no longer
+ * reads. Clear it there, as the SDK's handler does, and raise it as a Slot B
+ * EXI interrupt. Called every pass of the main loop: the mic holds one buffer,
+ * 1.45 ms of sound.
+ */
+void EXISlotBUpdate(void)
+{
+	static u32 LastIRQ = 0;
+	if (!SlotBReal)
+		return;
+	u32 csr = read32(EXI1_CSR);
+	if ((csr & 2) == 0)
+	{
+		// While the device streams (the mic: a buffer every 1.45 ms), the log's
+		// file writes would make this poll late: hold them until 50 ms of quiet.
+		if (LastIRQ && TimerDiffTicks(LastIRQ) > 94922)
+		{
+			LastIRQ = 0;
+			LogHold(false);
+		}
+		return;
+	}
+	write32(EXI1_CSR, (csr & ~0x808) | 2);	// clear EXIINT only (TCINT, EXTINT are write-1-to-clear too)
+	EXIRaise(0, 2, 0);
+	if (!LastIRQ)
+		LogHold(true);
+	LastIRQ = read32(HW_TIMER);
 }
 
 extern vu32 TRIGame;
@@ -185,15 +228,33 @@ bool EXICheckTimer(void)
 {
 	return TimerDiffTicks(IRQ_Timer) > CurrentTiming;
 }
-void EXIInterrupt(void)
+/**
+ * Raise an EXI interrupt with these causes for channels 0, 1 and 2, in the
+ * words __OSDispatchInterrupt reads instead of the status registers (Patch.c).
+ * An interrupt the game has not taken yet keeps its own causes.
+ */
+static void EXIRaise(u32 ch0, u32 ch1, u32 ch2)
 {
-	write32( 0x10, IRQ_Cause[0] );
-	write32( 0x14, IRQ_Cause[1] );
-	write32( 0x18, IRQ_Cause[2] );
+	sync_before_read( (void*)EXI_INT, 0x20 );
+	sync_before_read( (void*)0, 0x20 );
+	if (read32(EXI_INT))
+	{
+		ch0 |= read32(0x10);
+		ch1 |= read32(0x14);
+		ch2 |= read32(0x18);
+	}
+	write32( 0x10, ch0 );
+	write32( 0x14, ch1 );
+	write32( 0x18, ch2 );
 	sync_after_write( (void*)0, 0x20 );
 	write32( EXI_INT, 0x10 ); // EXI IRQ
 	sync_after_write( (void*)EXI_INT, 0x20 );
 	write32( HW_IPC_ARMCTRL, 8 ); //throw irq
+}
+
+void EXIInterrupt(void)
+{
+	EXIRaise(IRQ_Cause[0], IRQ_Cause[1], IRQ_Cause[2]);
 	//dbgprintf("EXI Interrupt\r\n");
 	EXI_IRQ = false;
 	IRQ_Timer = 0;

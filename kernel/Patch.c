@@ -47,6 +47,8 @@ u32 TITLE_ID = 0;
 
 #define PATCH_OFFSET_START (0x3000 - (sizeof(u32) * 3))
 #define PATCH_OFFSET_ENTRY PATCH_OFFSET_START - FakeEntryLoad_size
+// Offset of the nop in kernel/asm/EXIDMA.S that becomes a branch to EXIDMASlotB.S.
+#define EXIDMA_SLOTB_BRANCH 0x30
 static u32 POffset = PATCH_OFFSET_ENTRY;
 vu32 useipl = 0, useipltri = 0;
 vu32 DisableSIPatch = 0, DisableEXIPatch = 0, bbaEmuWanted = 0;
@@ -2861,6 +2863,10 @@ void DoPatches( char *Buffer, u32 Length, u32 DiscOffset )
 							W16(FOffset + 6, valueB);
 							dbgprintf("Patch:[EXIDMA] ChanLen:%08X\r\n", ChanLen);
 							W16(FOffset + 0x12, ChanLen);
+							// Slot B pass-through: EXIDMA.S's nop becomes a branch to
+							// EXIDMASlotB.S, which runs the DMA on the real channel 1.
+							if (read32(FOffset + EXIDMA_SLOTB_BRANCH) == 0x60000000)
+								PatchB(PatchCopy(EXIDMASlotB, EXIDMASlotB_size), FOffset + EXIDMA_SLOTB_BRANCH);
 						} break;
 						case FCODE_EXIUnlock:
 						{
