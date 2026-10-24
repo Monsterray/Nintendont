@@ -93,6 +93,16 @@ enum ninconfig
 	NIN_CFG_MC_SLOTB	= (1<<NIN_CFG_BIT_MC_SLOTB),
 };
 
+// Config bits a launcher may set. The kernel's internal bits and the loader's
+// UI-only Show Advanced are left out. Extend this with every new setting.
+#define NIN_CFG_LAUNCHER_MASK	( \
+	NIN_CFG_CHEATS | NIN_CFG_DEBUGGER | NIN_CFG_DEBUGWAIT | NIN_CFG_MEMCARDEMU | \
+	NIN_CFG_CHEAT_PATH | NIN_CFG_FORCE_WIDE | NIN_CFG_FORCE_PROG | NIN_CFG_AUTO_BOOT | \
+	NIN_CFG_REMLIMIT | NIN_CFG_OSREPORT | NIN_CFG_USB | NIN_CFG_LED | NIN_CFG_LOG | \
+	NIN_CFG_MC_MULTI | NIN_CFG_NATIVE_SI | NIN_CFG_WIIU_WIDE | NIN_CFG_ARCADE_MODE | \
+	NIN_CFG_CC_RUMBLE | NIN_CFG_SKIP_IPL | NIN_CFG_BBA_EMU | NIN_CFG_HYBRID_EXI | \
+	NIN_CFG_MC_SLOTB_EMU | NIN_CFG_LARGE_CACHE)
+
 #define NIN_CFG_HYBRID_EXI_ACTIVE(config, wiiu, triforce) \
 	(!(wiiu) && !(triforce) && \
 	 (((config) & (NIN_CFG_MEMCARDEMU | NIN_CFG_HYBRID_EXI)) == \
@@ -154,7 +164,29 @@ enum ninvideomode
 	NIN_VID_DF_FORCE	= (1<<NIN_VID_INDEX_DF_FORCE),
 	NIN_VID_DF_ON		= (1<<NIN_VID_INDEX_DF_ON),
 	NIN_VID_DF_MASK		= NIN_VID_DF_FORCE|NIN_VID_DF_ON,
+
+	// VideoMode bits a launcher may set. FORCE_DF is left out: it is only
+	// read when an older config is upgraded, so launchers use DF_* instead.
+	NIN_VID_LAUNCHER_MASK	= NIN_VID_FORCE|NIN_VID_NONE|NIN_VID_FORCE_MASK|NIN_VID_PROG|
+				  NIN_VID_PATCH_PAL50|NIN_VID_DF_MASK,
 };
+
+/**
+ * What this loader accepts, for launchers that boot it with a config in argv[1].
+ * The loader carries one copy, 32-byte aligned, starting with the 12 bytes
+ * "$$NinCfgCaps" (no terminator), then big-endian u32s. A launcher sends
+ * `version` (or an older version, which the loader upgrades) and sets only
+ * the bits in `config_mask` and `video_mask`. Loaders without it: use their
+ * "$$Version:" revision as before.
+ */
+typedef struct NIN_CFG_CAPS
+{
+	char		magic[12];	// "$$NinCfgCaps"
+	unsigned int	version;	// NIN_CFG_VERSION
+	unsigned int	size;		// sizeof(NIN_CFG)
+	unsigned int	config_mask;	// NIN_CFG_LAUNCHER_MASK
+	unsigned int	video_mask;	// NIN_VID_LAUNCHER_MASK
+} NIN_CFG_CAPS;
 
 enum ninlanguage
 {

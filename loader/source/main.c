@@ -147,6 +147,11 @@ static u8 loader_stub[0x1C00]; //save internally to prevent overwriting
 static ioctlv IOCTL_Buf[2] ALIGNED(32);
 static const char ARGSBOOT_STR[9] ALIGNED(0x10) = {'a','r','g','s','b','o','o','t','\0'}; //makes it easier to go through the file
 static const char NIN_BUILD_STRING[] ALIGNED(32) = NIN_VERSION_STRING; // Version detection string used by nintendont launchers "$$Version:x.xxx"
+// What the argv[1] config may hold, for launchers (see NIN_CFG_CAPS).
+static const NIN_CFG_CAPS NIN_CFG_CAPS_MARKER ALIGNED(32) __attribute__((used)) = {
+	{'$','$','N','i','n','C','f','g','C','a','p','s'},
+	NIN_CFG_VERSION, sizeof(NIN_CFG), NIN_CFG_LAUNCHER_MASK, NIN_VID_LAUNCHER_MASK
+};
 
 bool isWiiVC = false;
 bool wiiVCInternal = false;
@@ -769,7 +774,11 @@ int main(int argc, char **argv)
 	//Async Ioctlv done by now
 	IOS_Close(fd);
 
-	gprintf("Nintendont at your service!\r\n%s\r\n", NIN_BUILD_STRING);
+	// Passing the marker's address (not just its folded fields) is what keeps
+	// it in the binary, as with NIN_BUILD_STRING.
+	gprintf("Nintendont at your service!\r\n%s %.12s v%u config %08X video %08X\r\n",
+		NIN_BUILD_STRING, NIN_CFG_CAPS_MARKER.magic, NIN_CFG_CAPS_MARKER.version,
+		NIN_CFG_CAPS_MARKER.config_mask, NIN_CFG_CAPS_MARKER.video_mask);
 	KernelLoaded = 1;
 
 	// Checking for storage devices...
