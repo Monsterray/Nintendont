@@ -158,8 +158,10 @@ void EXIInit(void)
 	}
 
 	// Slot B without a card image is the real slot (kernel/asm/EXI*.S).
+	// Hybrid EXI gives the game's own routines and interrupts for Slot B
+	// to the hardware, so the pass-through stays out of its way.
 	SlotBReal = ConfigGetConfig(NIN_CFG_MEMCARDEMU) && TRIGame == 0 &&
-		!ConfigGetConfig(NIN_CFG_MC_SLOTB);
+		!ConfigGetConfig(NIN_CFG_MC_SLOTB) && !EXIHybridEnabled();
 }
 
 /**
