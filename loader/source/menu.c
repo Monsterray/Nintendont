@@ -254,8 +254,11 @@ static bool IsDiscImageValid(const char *filename, int discNumber, gameinfo *gi)
 			if ((gi->Flags & GIFLAG_FORMAT_MASK) == GIFLAG_FORMAT_CISO ||
 			    (gi->Flags & GIFLAG_FORMAT_MASK) == GIFLAG_FORMAT_ZSO)
 			{
-				// Multi-game + CISO/ZSO is NOT supported.
-				ret = false;
+				// Multi-game + CISO/ZSO is NOT supported. Leave now: below,
+				// the entry would be added with no name, and sorting the
+				// list would then call strcasecmp() on NULL.
+				f_close(&in);
+				return false;
 			}
 			else
 			{
