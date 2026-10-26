@@ -232,10 +232,13 @@ static bool IsDiscImageValid(const char *filename, int discNumber, gameinfo *gi)
 		const bool is_multigame = IsMultiGameDisc((const char*)buf);
 		if (is_multigame)
 		{
-			if (gi->Flags == GIFLAG_FORMAT_CISO)
+			if ((gi->Flags & GIFLAG_FORMAT_MASK) == GIFLAG_FORMAT_CISO)
 			{
-				// Multi-game + CISO is NOT supported.
-				ret = false;
+				// Multi-game + CISO is NOT supported. Leave now: below,
+				// the entry would be added with no name, and sorting the
+				// list would then call strcasecmp() on NULL.
+				f_close(&in);
+				return false;
 			}
 			else
 			{
