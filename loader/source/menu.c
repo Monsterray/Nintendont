@@ -430,7 +430,8 @@ static DevState LoadGameList(gameinfo *gi, u32 sz, u32 *pGameCount)
 			//Test if game.iso exists and add to list
 			bool found = false;
 
-			static const char disc_filenames[10][16] = {
+			#define DISC_NAMES 5	// names per disc, as in kernel/DI.c
+			static const char disc_filenames[DISC_NAMES*2][16] = {
 				"game.ciso", "game.cso", "game.gcm", "game.iso", "game.zso",
 				"disc2.ciso", "disc2.cso", "disc2.gcm", "disc2.iso", "disc2.zso"
 			};
@@ -439,9 +440,9 @@ static DevState LoadGameList(gameinfo *gi, u32 sz, u32 *pGameCount)
 			// A single directory can add two entries (disc 1 and disc 2),
 			// but the array-full check is only at the bottom of the outer
 			// loop, so bound this loop too or it can write gi[sz].
-			for (i = 0; i < 10 && gamecount < (int)sz; i++)
+			for (i = 0; i < DISC_NAMES*2 && gamecount < (int)sz; i++)
 			{
-				const u32 discNumber = i / 5;
+				const u32 discNumber = i / DISC_NAMES;
 
 				// Append the disc filename.
 				strcpy(&filename[fnlen], disc_filenames[i]);
@@ -452,8 +453,9 @@ static DevState LoadGameList(gameinfo *gi, u32 sz, u32 *pGameCount)
 					// Disc image exists and is a GameCube disc.
 					gamecount++;
 					found = true;
-					// Next disc number.
-					i = (discNumber * 4) + 3;
+					// Skip the rest of this disc's names: the loop's i++
+					// then starts the next disc (or ends after disc 2).
+					i = (discNumber + 1) * DISC_NAMES - 1;
 				}
 			}
 
