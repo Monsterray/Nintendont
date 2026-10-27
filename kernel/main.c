@@ -50,6 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  * MEM1 to /mem1.bin on the game's device, for reading the game's state on the PC.
  */
 #define TEST_EXIT	0x13003074	// PPC 0xD3003074, read by PADReadGC
+#define TEST_MARK	0x130030E0	// PPC 0xD30030E0, progress codes from a test program
 static void TestDumpMEM1(void)
 {
 	FIL f;
@@ -374,6 +375,18 @@ int _main( int argc, char *argv[] )
 			dbgprintf("TEST: asking the game to exit\r\n");
 			write32(TEST_EXIT, 1);
 			sync_after_write((void*)TEST_EXIT, 0x20);
+		}
+		// A test program can leave progress codes at PPC 0xD30030E0;
+		// each change is logged, so a hang shows where it stopped.
+		{
+			static u32 LastMark = 0;
+			sync_before_read((void*)TEST_MARK, 0x20);
+			const u32 mark = read32(TEST_MARK);
+			if (mark != LastMark)
+			{
+				dbgprintf("TEST: PPC mark %08X\r\n", mark);
+				LastMark = mark;
+			}
 		}
 #endif
 #ifdef PERFMON
