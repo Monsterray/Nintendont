@@ -43,6 +43,34 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "SDI.h"
 #include "ff_utf8.h"
 
+#ifdef NIN_TEST
+/*
+ * Test builds only (make TEST=seconds): a bench run needs no hands. After NIN_TEST
+ * seconds the kernel asks PADReadGC to exit to the loader, and on that exit it dumps
+ * MEM1 to /mem1.bin on the game's device, for reading the game's state on the PC.
+ */
+#define TEST_EXIT	0x13003074	// PPC 0xD3003074, read by PADReadGC
+static void TestDumpMEM1(void)
+{
+	FIL f;
+	UINT done;
+	u32 off;
+	if (f_open_char(&f, "/mem1.bin", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
+	{
+		dbgprintf("TEST: cannot create /mem1.bin\r\n");
+		return;
+	}
+	for (off = 0; off < 0x01800000; off += 0x10000)
+	{
+		sync_before_read((void*)off, 0x10000);
+		if (f_write(&f, (void*)off, 0x10000, &done) != FR_OK || done != 0x10000)
+			break;
+	}
+	f_close(&f);
+	dbgprintf("TEST: MEM1 dumped, %u bytes\r\n", off);
+}
+#endif
+
 //#define USE_OSREPORTDM 1
 
 //#undef DEBUG
@@ -273,6 +301,12 @@ int _main( int argc, char *argv[] )
 	u32 DiscChangeTimer = Now;
 	u32 ResetTimer = Now;
 	u32 InterruptTimer = Now;
+#ifdef NIN_TEST
+	u32 TestTimer = Now;
+	write32(TEST_EXIT, 0);
+	sync_after_write((void*)TEST_EXIT, 0x20);
+	dbgprintf("TEST: exit after %u s\r\n", NIN_TEST);
+#endif
 #ifdef PERFMON
 	u32 loopCnt = 0;
 	u32 loopPrintTimer = Now;
@@ -335,6 +369,14 @@ int _main( int argc, char *argv[] )
 	{
 		_ahbMemFlush(0);
 		EXISlotBUpdate();	// twice a pass: the mic leaves 1.45 ms per buffer
+#ifdef NIN_TEST
+		if (TimerDiffSeconds(TestTimer) >= NIN_TEST && read32(TEST_EXIT) == 0)
+		{
+			dbgprintf("TEST: asking the game to exit\r\n");
+			write32(TEST_EXIT, 1);
+			sync_after_write((void*)TEST_EXIT, 0x20);
+		}
+#endif
 #ifdef PERFMON
 		loopCnt++;
 		if(TimerDiffTicks(loopPrintTimer) > 1898437)
@@ -466,6 +508,9 @@ int _main( int argc, char *argv[] )
 		{
 			dbgprintf("Game Exit\r\n");
 			DIFinishAsync();
+#ifdef NIN_TEST
+			TestDumpMEM1();
+#endif
 			break;
 		}
 		if (reset_status == 0x3DEA)

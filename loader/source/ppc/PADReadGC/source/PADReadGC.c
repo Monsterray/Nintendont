@@ -102,6 +102,11 @@ u32 PADRead(u32 calledByGame)
 	}
 	else //this file is only used for hid in the loader
 		MaxPads = 0;
+#ifdef NIN_TEST
+	// Test builds: the kernel asks for an exit after its timer (kernel/main.c).
+	if (calledByGame && *(vu32*)0xD3003074)
+		goto DoExit;
+#endif
 
 	u32 WiiUGamepadSlot = ((NIN_CFG*)0x93004000)->WiiUGamepadSlot;
 	u32 HIDPad = (*HID_STATUS == 0) ? HID_PAD_NONE : HID_PAD_NOT_SET;

@@ -31,6 +31,11 @@ void CheckForGecko(void);
 // True if CheckForGecko() found a USB Gecko in memory card Slot B.
 bool HaveGecko(void);
 void closeLog(void);
+#ifdef NIN_TEST
+// Test builds: the loader's log to the PC (hbc-reborn's network log), see exi.c.
+void TestNetOpen(void);
+void TestNetClose(void);
+#endif
 
 #ifdef DEBUG
 // FIXME: Commit this first, and find other
