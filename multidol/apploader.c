@@ -129,5 +129,13 @@ u32 Apploader_Run()
 	}
 
 	/* Set entry point from apploader */
-	return (u32)appldr_final();
+	u32 entry = (u32)appldr_final();
+
+	/* The apploader leaves the OS globals in low memory (FST location at
+	 * 0x80000038 and the rest) in the data cache. The kernel reads 0x38
+	 * from memory for FST games, so write them back now instead of
+	 * whenever the game happens to evict that line. */
+	sync_after_write((void*)0x80000000, 0x3100);
+
+	return entry;
 }
