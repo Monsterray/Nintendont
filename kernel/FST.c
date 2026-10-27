@@ -182,6 +182,8 @@ const u8* FSTRead(const char *GamePath, u32* Length, u32 Offset)
 		//Get FSTTable offset from low memory, must be set by apploader
 		if( FSTable == NULL )
 		{
+			// The game's OS globals: read 0x38 from memory, not a stale cache line.
+			sync_before_read( (void*)0x20, 0x20 );
 			FSTable	= (u8*)((*(vu32*)0x38) & 0x7FFFFFFF);
 			//dbgprintf("DIP:FSTOffset:  %08X\r\n", (u32)FSTable );
 		}
