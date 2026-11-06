@@ -21,6 +21,7 @@ A Wii Homebrew Project to play GC Games on Wii and vWii on Wii U
 * Disc switching
 * Use the official Nintendo GameCube controller adapter
 * BBA Emulation (see [BBA Emulation Readme](BBA_Readme.md))
+* GameCube boot animation (IPL) before the game, with your own IPL dump (see below)
 
 ### Features: (Wii only)
 * Play retail discs
@@ -34,8 +35,8 @@ A Wii Homebrew Project to play GC Games on Wii and vWii on Wii U
 * Game Boy Player
 
 ### Experimental microphone support with memory card emulation
-On an original Wii with GameCube memory-card ports, enable both **Memcard
-Emulation** and **hybrid EXI** in the settings menu
+On an original Wii with GameCube memory-card ports, enable both **Emulation**
+and **Hybrid EXI** in the Memory Card tab of the settings menu
 to use a virtual memory card in Slot A and physical peripherals, such as the
 GameCube microphone, in slot 2 (Slot B).
 
@@ -43,8 +44,8 @@ The hybrid option defaults to off, including for settings saved by older
 versions. It has no effect unless memory card emulation is also enabled, and
 does nothing on Wii U/vWii or for Triforce games.
 While active, it does not load or expose a virtual Slot B memory card; existing
-Slot B save images are left untouched. Turn it off to restore the existing
-virtual Slot B behavior.
+Slot B save images are left untouched. To use a virtual Slot B memory card
+instead, turn it off and turn on **Slot B Emulation**.
 
 Leave **Debugger** and **Debugger Wait** off when using a Slot B peripheral:
 the USB Gecko debugger uses the same physical slot. With **Log** enabled, the
@@ -71,10 +72,34 @@ routine, and interrupt handlers against a local disc image. These game tests
 are skipped when the image is omitted, missing, or not GP7E01. This test does not
 save or distribute game code.
 
+### GameCube boot animation (IPL)
+Nintendont can start the real GameCube IPL (the boot animation and the sound)
+before the game, like a GameCube does. The IPL is not included: you need a
+dump of it from your own GameCube.
+
+1. Name the dump for the region of the games you play:
+   * **iplusa.bin** for USA games
+   * **ipljap.bin** for Japanese and Korean games
+   * **iplpal.bin** for PAL games (not used on Wii U)
+2. Put it in the root of the device your games are on, e.g. usb:/iplusa.bin
+   for games in usb:/games/. If you have games on both an SD card and a USB
+   device, put a copy on each.
+3. Make sure **Skip IPL** is off in the settings menu.
+
+Nintendont picks the file that matches the region of each game. If that file is
+not found, the game boots directly, as if Skip IPL were on.
+
+Notes:
+* The file must be a raw dump of the IPL ROM, exactly 2 MB (2,097,152 bytes).
+  Decrypted IPLs and IPL .dol files do not work.
+* A file named IPL.bin is not used: rename it to the name for its region.
+* Turn on **Skip IPL** to boot games directly again.
+* Triforce games use segaboot.bin in the same place instead.
+
 ### Quick Installation:
 1. Get the [loader.dol](loader/loader.dol?raw=true), rename it to boot.dol and put it in /apps/Nintendont/ along with the files [meta.xml](nintendont/meta.xml?raw=true) and [icon.png](nintendont/icon.png?raw=true).
 2. Copy your GameCube games to the /games/ directory. Subdirectories are optional for 1-disc games in ISO/GCM, CISO and ZSO format.
-   * For 2-disc games, you should create a subdirectory /games/MYGAME/ (where MYGAME can be anything), then name disc 1 as "game.iso" and disc 2 as "disc2.iso".
+   * For 2-disc games, you should create a subdirectory /games/MYGAME/ (where MYGAME can be anything), then name disc 1 as "game.iso" and disc 2 as "disc2.iso". The other formats work the same way: game.gcm, game.ciso, game.cso or game.zso, and disc2 with the same extensions. The two discs do not need to use the same format.
    * For extracted FST, the FST must be located in a subdirectory, e.g. /games/FSTgame/sys/boot.bin .
 3. Connect your storage device to your Wii or Wii U and start The Homebrew Channel.
 4. Select Nintendont.
@@ -111,3 +136,4 @@ https://www.mediafire.com/folder/j0juqb5vvd6z5/devkitPro_archives (identical fil
 * The Wii and Wii U SD card slot is known to be slow. If you're using an SD card and are having performance issues, consider either using a USB SD reader or a USB hard drive.
 * USB flash drives are known to be problematic.
 * Nintendont runs best with storage devices formatted with 32 KB clusters. (Use either FAT32 or exFAT.)
+* ZSO images are smaller, but load slower than ISO and CISO: currently slower than a real GameCube disc drive. Use ISO or CISO if loading times matter.
